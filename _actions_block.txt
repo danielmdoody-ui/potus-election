@@ -1,0 +1,372 @@
+}
+// -----------------------------------------------
+
+// POTUS v2.2 — Game Engine (Core Logic)
+// Depends on: game-data.js, game-night.js, game-tour.js
+// -----------------------------------------------
+
+// ╔----------------------------------------------------------------------╗
+// ║  🛠  GAME CONFIG — All easy-to-tweak knobs in one place             ║
+// ╠----------------------------------------------------------------------╣
+// ║  Edit values here to change game feel without hunting through code. ║
+// ╚-----------------------------------------------------------------------
+const GAME_CONFIG = {
+
+  // ── ECONOMY ─────────────────────────────────────────────────────────
+  startingFunds: 45,          // Starting campaign funds ($M)
+  weeklyBurnRate: 1.2,        // Funds spent per week passively ($M)
+  fundraiseCap: 200,          // Max total funds that can be raised ($M)
+
+  // ── TIMING ──────────────────────────────────────────────────────────
+  primaryWeeks: 14,           // Number of primary weeks
+  generalWeeks: 16,           // Number of general election weeks
+
+  // ── POLLING & VARIANCE ──────────────────────────────────────────────
+  pollErrorScale: 1.0,        // Multiplier on hidden polling error (1 = default, 2 = chaotic)
+  swingStateVolatility: 1.2,  // How volatile swing states are vs safe states
+
+  // ── ACTIONS ─────────────────────────────────────────────────────────
+  rallyBaseEffect: 4.5,       // Base polling boost from a rally (pts)
+  grassrootsBaseEffect: 4.5,  // Base polling boost from grassroots (pts)
+  adBlitzCost: 3,             // Cost of Ad Blitz action ($M) — change here AND in ACTIONS array
+  safeStateCapGeneral: 0.6,   // Max pts a safe state can be moved per rally in the general
+
+  // ── AI DIFFICULTY ────────────────────────────────────────────────────
+  aiScandalChance: 0.08,      // Probability (0-1) per week of AI candidate scandal
+  aiActionEfficiency: 0.85,   // How effective AI actions are vs player (1 = equal)
+
+  // ── ELECTION NIGHT ───────────────────────────────────────────────────
+  ctcMarginThreshold: 4,      // States within this margin (pts) go "Too Close to Call"
+  ctcBothCloseThreshold: 8,   // If both candidates near 270, this margin triggers TTC
+  retractionChance: 0.20,     // Probability a razor-thin call gets retracted (drama!)
+};
+// -----------------------------------------------------------------------
+
+
+const ACTIONS=[
+  {id:'visit',   name:'Campaign Rally',      icon:'🗺',desc:'Big rally in target state. Best in swing states.',outcomes:'Polling +3–6% in state · Ground game ↑ · Momentum ↑',cost:1.5,needsState:true,
+    fx:s=>{const st=GS.states.find(x=>x.code===s);if(!st)return[];
+      // Ground game and enthusiasm amplify the rally effect
+      const groundMult = 1 + GS.groundGame/150;
+      const enthusiasmMult = 1 + ((GS._enthusiasm||50)-50)/120;
+      const homeBonus = s===GS.homeState ? 1.6 : 1;
+      // Partisan resistance: in the general phase, hostile states resist your rally hard.
+      // rawLean > 0 means the state leans YOUR way, < 0 means it's hostile territory.
+      // ind/custom party: rawLean=0 — no inherent partisan lean, all states equally accessible.
+      const rawLean = GS.phase==='general' ? (GS.playerParty==='rep' ? -st.lean : GS.playerParty==='ind' ? 0 : st.lean) : 0;
+      // BUG FIX: Strengthened resistance formula. Floor at 0.06x for deeply hostile states.
+      // States leaning 20+ pts against you barely move even with perfect conditions.
+      const partisanResist = rawLean < -8 ? Math.max(0.06, 1 + rawLean / 18) : 1.0;
+      // Hard cap by state safety tier — in the general election only.
+      // Safe (|lean|>20): max 0.5pts, Likely (|lean|12-20): max 1.5pts, Lean (|lean|6-12): max 2.5pts, Toss-up: uncapped.
+      const _absL = Math.abs(st.lean);
+      const safeStateCap = (GS.phase==='general') ? (_absL > 20 ? 0.5 : _absL > 12 ? 1.5 : _absL > 6 ? 2.5 : Infinity) : Infinity;
+      const rawEffect = G(4.5, 1.2) * groundMult * enthusiasmMult * homeBonus * partisanResist;
+      const b = Math.min(rawEffect, safeStateCap);
+      // VP home-state bonus also scales with partisan resistance — even star VPs can't override local politics
+      const vpBonus = GS.vp && GS.vp.stateCode===s ? Math.min(3.5 * partisanResist, safeStateCap * 0.5) : 0;
+      if(GS.phase==='primary') st.primLead=cl(st.primLead+b,-60,60);
+      else st.genLead=cl(st.genLead+b+vpBonus,-60,60);
+      GS.groundGame=cl(GS.groundGame+G(2.5,1),0,100);GS.momentum=cl(GS.momentum+2.5,-20,20);GS.favorability=cl(GS.favorability+G(1.5,.6),20,85);
+      const resistNote = partisanResist < 0.6 ? ` (deeply hostile turf — only ${(partisanResist*100).toFixed(0)}% effective)` :
+                         partisanResist < 0.85 ? ` (hostile turf — ${(partisanResist*100).toFixed(0)}% effective)` : '';
+      const safeNote = (GS.phase==='general' && Math.abs(st.lean) > 18) ? ` 🔒 Safe state — gains capped.` : '';
+      return[{type: partisanResist < 0.3 ? 'neutral' : 'positive',title:`Rally in ${st.name}`,msg:`${partisanResist<0.3?'Sparse crowd in hostile territory':'Massive crowd'} — polling ${b>0?'+':''}${b.toFixed(1)}%.${vpBonus>0.05?' VP regional bonus +'+vpBonus.toFixed(1)+'%!':''}${resistNote}${safeNote}`}]}},
+  {id:'fundraise',name:'Fundraising Drive',  icon:'💰',desc:'Fill the war chest. Slight momentum dip.',outcomes:'Raise $1.5–4M · Momentum slightly ↓',cost:0,needsState:false,
+    fx:()=>{const r=G(2.5,1.0)*(1+GS.favorability/350);GS.funds=Math.min(GS.funds+r, GAME_CONFIG.fundraiseCap);GS.totalRaised+=r;GS.momentum=cl(GS.momentum-1,-20,20);return[{type:'positive',title:'Fundraising Drive',msg:`Raised ${fm(r)}. Cash on hand: ${fm(GS.funds)}. (Momentum −1 — time spent off the trail.)`}]}},
+  {id:'speech',  name:'Policy Address',      icon:'📜',desc:'Deliver a policy speech. Boosts favorability & media.',outcomes:'Favorability +2–5% · Media +3–7% · Momentum ↑',cost:.5,needsState:false,
+    fx:()=>{const f=G(3,1.5),m=G(5,2);GS.favorability=cl(GS.favorability+f,20,85);GS.mediaCoverage=cl(GS.mediaCoverage+m,0,100);GS.momentum=cl(GS.momentum+1.5,-20,20);return[{type:'positive',title:'Policy Speech',msg:`Favorability +${f.toFixed(1)}%, media +${m.toFixed(1)}%.`}]}},
+  {id:'attack',  name:'Opposition Research', icon:'📺',desc:'Run attack ads on frontrunner. 65% land, 35% backfire.',outcomes:'Success: opponent approval −6% · Fail: your favorability −3%',cost:2.5,needsState:false,
+    fx:()=>{if(Math.random()<.65){const t=GS.aiCandidates.filter(a=>a.active).sort((a,b)=>b.delegates-a.delegates)[0]||GS.aiCandidates[0];if(t){t.approval=cl(t.approval-G(6,2),0,80);GS.momentum=cl(GS.momentum+3,-20,20);return[{type:'positive',title:'Attack Lands',msg:`Ads against ${t.name} hurt their numbers badly.`}]}}
+      GS.favorability=cl(GS.favorability-G(3,1),20,85);GS.momentum=cl(GS.momentum-2,-20,20);return[{type:'negative',title:'Attack Backfires',msg:'Negative ads draw backlash. Favorability drops.'}]}},
+  {id:'coalition',name:'Coalition Building', icon:'-',desc:'MINIGAME — Target a voter bloc. Earn endorsements and shift key demographics.',outcomes:'Target bloc +4% · Endorsement earned · Favorability ↑',cost:1,needsState:false,
+    fx:()=>{const B=['urban','suburban','rural','youth','seniors'];const t=B[~~(Math.random()*B.length)];const g=G(4,1.5);GS.demos[t]=cl(GS.demos[t]+g,20,80);GS.endorsements++;GS.favorability=cl(GS.favorability+G(1.5,.5),20,85);
+      if(GS.phase==='general'){GS.states.filter(s=>Math.abs(s.genLead)<10).forEach(s=>s.genLead=cl(s.genLead+G(.4,.2),-60,60))}
+      const N={urban:'Urban',suburban:'Suburban',rural:'Rural',youth:'Youth',seniors:'Seniors'};return[{type:'positive',title:`Coalition — ${N[t]}`,msg:`${N[t]} support +${g.toFixed(1)}%. Endorsement earned.`}]}},
+  {id:'debate',  name:'Debate Prep',         icon:'🎤',desc:'Boost electability. Crucial before debate weeks.',outcomes:'Electability +3–7% · Debate performance bonus',cost:.8,needsState:false,
+    fx:()=>{const e=G(5,2);GS.electability=cl(GS.electability+e,0,100);GS.mediaCoverage=cl(GS.mediaCoverage+3,0,100);GS.favorability=cl(GS.favorability+1,20,85);return[{type:'positive',title:'Debate Ready',msg:`Electability +${e.toFixed(1)}%.`}]}},
+  {id:'grass',   name:'Grassroots Org.',     icon:'📋',desc:'Expand volunteer network in target state. Builds long-term ground game.',outcomes:'Ground game +4% · State polling +3–5% · Momentum ↑',cost:.5,needsState:true,
+    fx:s=>{const st=GS.states.find(x=>x.code===s);if(!st)return[];const g=G(4.5,1.2);GS.groundGame=cl(GS.groundGame+g,0,100);
+      const rawLean2 = GS.phase==='general' ? (GS.playerParty==='rep' ? -st.lean : GS.playerParty==='ind' ? 0 : st.lean) : 0;
+      const grassResist = rawLean2 < -8 ? Math.max(0.08, 1 + rawLean2 / 18) : 1.0;
+      const safeCapGrass = (GS.phase==='general' && Math.abs(st.lean) > 18) ? 0.5 : Infinity;
+      const stateGain = Math.min(G(2.8,0.8)*grassResist, safeCapGrass);
+      if(GS.phase==='primary')st.primLead=cl(st.primLead+G(2.5,0.8),-60,60);
+      else st.genLead=cl(st.genLead+stateGain,-60,60);
+      const grassNote = grassResist < 0.5 ? ` Deeply hostile territory — org limited to ${(grassResist*100).toFixed(0)}% effectiveness.` :
+                        grassResist < 0.85 ? ` Tough terrain — ${(grassResist*100).toFixed(0)}% effective.` : '';
+      const safeNote = (Math.abs(st.lean) > 18 && GS.phase==='general') ? ' 🔒 Safe state — limited gains.' : '';
+      return[{type:'positive',title:`Ground Game — ${st.name}`,msg:`Volunteers mobilised. State polling +${stateGain.toFixed(1)}%. Ground game +${g.toFixed(1)}%.${grassNote}${safeNote}`}]}},
+  {id:'adblitz', name:'Ad Blitz',            icon:'📡',desc:'MINIGAME — Choose your ad strategy: attack, contrast, or inspire. Hits all swing states.',outcomes:'Swing states polling +0.5–2% · Media coverage ↑↑',cost:3,needsState:false,
+    fx:()=>{
+      // Use designated swing states so battleground targeting stays stable all game.
+      const swingPool = getSwingStates();
+      const swing = swingPool.filter(s=>{
+        const lead = GS.phase==='primary' ? s.primLead : s.genLead;
+        if(GS.phase==='primary') return Math.abs(lead) < 14;
+        return Math.abs(s.lean) <= 18 && Math.abs(lead) < 18;
+      });
+      const targets = swing.length ? swing : swingPool.slice(0, 8);
+      const b=G(1,.4);
+      targets.forEach(s=>{if(GS.phase==='primary')s.primLead=cl(s.primLead+b*.5,-60,60);else s.genLead=cl(s.genLead+b*.7,-60,60)});
+      GS.mediaCoverage=cl(GS.mediaCoverage+10,0,100);return[{type:'positive',title:'Ad Blitz',msg:`${targets.length} swing states flooded with ads. +${b.toFixed(1)}% in close races. Safe states stay mostly stable.`}]}},
+  {id:'townhall', name:'Town Hall',           icon:'--',desc:'MINIGAME — Local Q&A. Answer voter questions to shift blocs & earn a state bonus.',outcomes:'State polling +2–5% · Favorability ↑ · Electability ↑',cost:.8,needsState:true,
+    fx:s=>{const st=GS.states.find(x=>x.code===s);if(!st)return[];
+      const rawLean3 = GS.phase==='general' ? (GS.playerParty==='rep' ? -st.lean : GS.playerParty==='ind' ? 0 : st.lean) : 0;
+      const townResist = rawLean3 < -10 ? Math.max(0.08, 1 + rawLean3 / 16) : 1.0;
+      const safeCapTH = (GS.phase==='general' && Math.abs(st.lean) > 18) ? 0.7 : Infinity;
+      const boost = Math.min(G(3.5,1.0)*(1+GS.electability/180)*townResist, safeCapTH);
+      GS.favorability=cl(GS.favorability+G(2,.8),20,85);
+      GS.electability=cl(GS.electability+G(2,1),0,100);
+      if(GS.phase==='primary')st.primLead=cl(st.primLead+boost,-60,60);
+      else st.genLead=cl(st.genLead+boost,-60,60);
+      const resistNote = townResist < 0.5 ? ` (hostile crowd — ${(townResist*100).toFixed(0)}% receptiveness)` :
+                         townResist < 0.85 ? ` (tough crowd — ${(townResist*100).toFixed(0)}% receptiveness)` : '';
+      const safeNote = Math.abs(st.lean) > 18 && GS.phase==='general' ? ' 🔒 Safe state — limited impact.' : '';
+      return[{type:'positive',title:`Town Hall — ${st.name}`,msg:`Authentic Q&A earns voter trust. +${boost.toFixed(1)}% in state.${resistNote}${safeNote}`}]}},
+  {id:'surrogate',name:'Surrogate Tour',      icon:'-',desc:'Send allies to campaign in 3 swing states simultaneously.',outcomes:'3 swing states polling +0.5–1.5% each · Ground game ↑',cost:2,needsState:false,
+    fx:()=>{
+      const swing = getSwingStates()
+        .filter(s=>Math.abs(s.lean)<=16)
+        .sort((a,b)=>Math.abs(a.genLead)-Math.abs(b.genLead))
+        .slice(0,3);
+      const b=G(.8,.4);
+      swing.forEach(s=>{if(GS.phase==='primary')s.primLead=cl(s.primLead+b,-60,60);else s.genLead=cl(s.genLead+b,-60,60)});
+      GS.groundGame=cl(GS.groundGame+G(1.5,.7),0,100);
+      const names=swing.map(s=>s.code).join(', ')||'no reachable states';
+      return[{type:'positive',title:'Surrogate Blitz',msg:`Allies hit ${names}. +${b.toFixed(1)}% each. Ground game grows.`}]}},
+  {id:'crisis',   name:'Crisis Response',     icon:'🛡',desc:'Counter a scandal or opponent attack. Restores momentum.',outcomes:'Favorability recovers · Momentum +2–4 · Opponent weakened',cost:1.5,needsState:false,
+    fx:()=>{const rec=G(5,2);GS.favorability=cl(GS.favorability+rec*.3,20,85);GS.momentum=cl(GS.momentum+rec*.4,-20,20);
+      GS.mediaCoverage=cl(GS.mediaCoverage+8,0,100);
+      // If opponent is attacking, weaken their attack
+      const opp=GS.aiCandidates.find(a=>a.active);if(opp)opp.approval=cl(opp.approval-G(2,1),0,80);
+      return[{type:'positive',title:'Crisis Contained',msg:`Rapid response neutralises coverage. Momentum +${(rec*.4).toFixed(1)}, favorability recovers.`}]}},
+  {id:'press_tour',name:'Media Press Tour',   icon:'📰',desc:'MINIGAME — Fast Q&A gauntlet with hostile reporters. High media & favorability if you nail it.',outcomes:'Media +3–6% · Favorability +2–4%',cost:1,needsState:false,
+    fx:()=>{const m=G(4,1.5);GS.mediaCoverage=cl(GS.mediaCoverage+m,0,100);GS.favorability=cl(GS.favorability+G(2.5,1),20,85);return[{type:'positive',title:'Press Tour',msg:`Media coverage +${m.toFixed(1)}%.`}]}},
+  {id:'fundraise_calls',name:'Call List Drive',icon:'📞',desc:'MINIGAME — Work the donor rolodex. Match ask to donor type for maximum fundraising.',outcomes:'Raise $1–3M additional',cost:0,needsState:false,
+    fx:()=>{const r=G(1.8,0.7);GS.funds=Math.min(GS.funds+r, GAME_CONFIG.fundraiseCap);GS.totalRaised+=r;return[{type:'positive',title:'Call List Done',msg:`Raised additional ${fm(r)}.`}]}},
+  // ── BLOC-SHIFTING ACTIONS (available in general phase) ──
+  {id:'union_speech',name:'Union Rally Speech', icon:'✊',desc:'Energise working class voters. Big gains in Rust Belt.',outcomes:'Working class +2.5% · Suburban women slightly −',cost:1.5,needsState:false,generalOnly:true,
+    fx:()=>{
+      shiftBloc('wc', G(2.5,0.8)); shiftBloc('sw', G(-0.8,0.3));
+      GS.momentum=cl(GS.momentum+2,-20,20);
+      GS_ACTION_LOG.push({week:GS.week,action:'union_speech',blocs:{wc:'+~2.5',sw:'-~0.8'}});
+      return[{type:'positive',title:'Union Rally',msg:'Working class voters surge. Rust Belt states shift. Suburban women slightly cooler.'}]}},
+  {id:'climate_push',name:'Climate Town Hall', icon:'🌿',desc:'Bold climate agenda fires up urban & young voters.',outcomes:'Urban progs +3% · Youth +2% · Seniors −1.5%',cost:1.5,needsState:false,generalOnly:true,
+    fx:()=>{
+      shiftBloc('up', G(3,0.8)); shiftBloc('yv', G(2,0.6)); shiftBloc('sr', G(-1.5,0.5));
+      GS.demos.youth=cl(GS.demos.youth+G(3,1),20,80);
+      GS_ACTION_LOG.push({week:GS.week,action:'climate_push',blocs:{up:'+~3',yv:'+~2',sr:'-~1.5'}});
+      return[{type:'positive',title:'Climate Push',msg:'Urban progressives and young voters rally. Seniors more skeptical.'}]}},
+  {id:'crime_ad',  name:'Tough on Crime Ad',   icon:'🔒',desc:'Plays to suburban safety concerns. Young & urban voters push back.',outcomes:'Suburban women +2% · Independents +1.2% · Youth −1.5%',cost:2.5,needsState:false,generalOnly:true,
+    fx:()=>{
+      shiftBloc('sw', G(2,0.7)); shiftBloc('in', G(1.2,0.5)); shiftBloc('yv', G(-1.5,0.6)); shiftBloc('up', G(-1,0.5));
+      GS_ACTION_LOG.push({week:GS.week,action:'crime_ad',blocs:{sw:'+~2',in:'+~1.2',yv:'-~1.5',up:'-~1'}});
+      return[{type:'positive',title:'Crime Ad',msg:'Suburban women and independents respond well. Young voters and urban progressives are turned off.'}]}},
+  {id:'econ_msg',  name:'Economic Populism',   icon:'📊',desc:'Working & middle class appeal. May conflict with college-educated bloc.',outcomes:'Working class +2% · Independents +1.5% · College-educated −1%',cost:1.5,needsState:false,generalOnly:true,
+    fx:()=>{
+      shiftBloc('wc', G(2,0.8)); shiftBloc('in', G(1.5,0.6)); shiftBloc('ce', G(-1,0.5));
+      GS_ACTION_LOG.push({week:GS.week,action:'econ_msg',blocs:{wc:'+~2',in:'+~1.5',ce:'-~1'}});
+      return[{type:'positive',title:'Economic Populism',msg:'Working class and independents move your way. College-educated voters slightly less enthusiastic.'}]}},
+  {id:'college_push',name:'College Outreach',  icon:'🎓',desc:'Drive college-educated & young voter turnout.',outcomes:'College-educated +2.5% · Youth +2% · Suburban women +1%',cost:1.5,needsState:false,generalOnly:true,
+    fx:()=>{
+      shiftBloc('ce', G(2.5,0.8)); shiftBloc('yv', G(2,0.7)); shiftBloc('sw', G(1,0.5));
+      GS.demos.youth=cl(GS.demos.youth+G(2,1),20,80);
+      GS_ACTION_LOG.push({week:GS.week,action:'college_push',blocs:{ce:'+~2.5',yv:'+~2',sw:'+~1'}});
+      return[{type:'positive',title:'College Outreach',msg:'Educated voters and the youth bloc energized. Suburban women also respond positively.'}]}},
+  {id:'rural_tour', name:'Rural Outreach Tour',icon:'🌾',desc:'Swing rural voters and win back independents in small-town America.',outcomes:'Rural +2% · Working class +1.5% · Independents +1.2%',cost:2,needsState:false,generalOnly:true,
+    fx:()=>{
+      shiftBloc('rc', G(2,0.8)); shiftBloc('wc', G(1.5,0.6)); shiftBloc('in', G(1.2,0.5));
+      GS_ACTION_LOG.push({week:GS.week,action:'rural_tour',blocs:{rc:'+~2',wc:'+~1.5',in:'+~1.2'}});
+      return[{type:'positive',title:'Rural Tour',msg:'Rural conservatives softened. Working class and independents shift. Sun Belt less affected than Rust Belt.'}]}},
+
+  // ── PRIMARY-ONLY ACTIONS ─────────────────────────────────────────────────
+  {id:'canvass',      name:'Door-to-Door Canvassing', icon:'🚪',desc:'MINIGAME — Match your pitch to each voter type. Ground game in target state surges.',outcomes:'State polling +2–5% · Ground game ↑↑ · Momentum ↑',cost:1.2,needsState:true,primaryOnly:true,
+    fx:s=>{const st=GS.states.find(x=>x.code===s);if(!st)return[];
+      const base=G(3.5,1.0);
+      GS.groundGame=cl(GS.groundGame+G(3.5,1),0,100);
+      st.primLead=cl(st.primLead+base,-60,60);
+      GS.momentum=cl(GS.momentum+1.5,-20,20);
+      return[{type:'positive',title:`Canvassing — ${st.name}`,msg:`Volunteers knocked ${Math.floor(G(800,200))} doors. Polling +${base.toFixed(1)}%. Ground game building.`}]}},
+  {id:'spin_room',    name:'Spin Room Session',       icon:'🎙-',desc:'MINIGAME — Control the primary narrative. Handle hostile talking points from party insiders.',outcomes:'Media +3–6% · Favorability +2% · Momentum ↑',cost:0.8,needsState:false,primaryOnly:true,
+    fx:()=>{const m=G(4,1.5);GS.mediaCoverage=cl(GS.mediaCoverage+m,0,100);GS.favorability=cl(GS.favorability+G(2,0.8),20,85);GS.momentum=cl(GS.momentum+2,-20,20);
+      return[{type:'positive',title:'Spin Room',msg:`Media narrative improved. Coverage +${m.toFixed(1)}%.`}]}},
+  {id:'oppo_rapid',   name:'Rapid Response',          icon:'⚡',desc:'MINIGAME — Counter a primary opponent attack in real time. Speed matters.',outcomes:'Favorability recovered · Momentum ↑ · Opponent approval −',cost:1,needsState:false,primaryOnly:true,
+    fx:()=>{const rec=G(4,1.5);GS.favorability=cl(GS.favorability+rec*.4,20,85);GS.momentum=cl(GS.momentum+rec*.35,-20,20);
+      const opp=GS.aiCandidates.find(a=>a.active);if(opp)opp.approval=cl(opp.approval-G(2.5,1),0,80);
+      return[{type:'positive',title:'Rapid Response',msg:`Attack neutralised. Favorability +${(rec*.4).toFixed(1)}%.`}]}},
+  {id:'delegate_push',name:'Delegate Courtship',      icon:'🗳-',desc:'Work the phones and private dinners. Court uncommitted delegates directly.',outcomes:'+10–25 delegates secured',cost:2,needsState:false,primaryOnly:true,
+    fx:()=>{const gain=Math.floor(G(18,6));GS.playerDelegates=cl(GS.playerDelegates+gain,0,4000);GS.favorability=cl(GS.favorability+G(1,0.5),20,85);
+      return[{type:'positive',title:'Delegate Courtship',msg:`Backroom diplomacy pays off. +${gain} uncommitted delegates secured.`}]}},
+
+
+
+
+  {id:'national_address',name:'National Address',icon:'📺',desc:'⚠- RISKY — Prime-time address to the nation. Could redefine your campaign — or expose you.',cost:3,needsState:false,generalOnly:true,risk:true,
+    fx:()=>{
+      const moodMod = window._moodRiskRoll || 0.65;
+      const roll = Math.random();
+      if(roll < 0.45*moodMod/0.65){ // mood adjusts triumph threshold
+        const boost = G(5,1.5);
+        GS.states.forEach(s=>s.genLead=cl(s.genLead+G(1.2,0.5),-60,60));
+        GS.favorability=cl(GS.favorability+boost,20,85);GS.momentum=cl(GS.momentum+5,-20,20);
+        shiftBloc('in',G(3,0.8)); shiftBloc('sw',G(2,0.8));
+        return[{type:'positive',title:'National Address — TRIUMPH',msg:`Your prime-time address moved the needle. Approval jumped +${boost.toFixed(0)} points. Independents and suburban women swung hard. Pundits call it a "defining moment."`}];
+      } else if(roll < 0.78) { // 33% neutral
+        GS.states.forEach(s=>s.genLead=cl(s.genLead+G(0.3,0.4),-60,60));
+        GS.favorability=cl(GS.favorability+G(1,0.5),20,85); GS.momentum=cl(GS.momentum+1,-20,20);
+        return[{type:'neutral',title:'National Address — Mixed Reviews',msg:'Your address landed without major impact. Some praised the substance; critics found it flat. The nation remains divided.'}];
+      } else { // 22% disaster
+        const drop = G(-4,1);
+        GS.favorability=cl(GS.favorability+drop,20,85); GS.momentum=cl(GS.momentum-4,-20,20);
+        GS.states.filter(s=>Math.abs(s.lean)<=8).forEach(s=>s.genLead=cl(s.genLead-G(1.2,0.5),-60,60));
+        return[{type:'negative',title:'🔥 National Address — BACKFIRE',msg:`Disaster. A stumble on live television, an awkward moment that went viral. Favorability fell ${drop.toFixed(0)} points. Swing states tightened overnight.`}];
+      }}},
+
+  {id:'attack_blitz',name:'Massive Attack Ad',icon:'💣',desc:'⚠- RISKY — Carpet bomb opponent with attack ads. Bruising. Could destroy them — or backfire on you.',cost:4,needsState:false,generalOnly:true,risk:true,
+    fx:()=>{
+      const roll = Math.random();
+      if(roll < 0.5){ // 50% effective
+        const dmg = G(4,1.2);
+        GS.opponent.favorability = cl((GS.opponent.favorability||45)-dmg,10,85);
+        GS.states.filter(s=>Math.abs(s.lean)<=10).forEach(s=>s.genLead=cl(s.genLead+G(1.5,0.4),-60,60));
+        GS.momentum=cl(GS.momentum+3,-20,20);
+        return[{type:'positive',title:'Attack Blitz — EFFECTIVE',msg:`The ads landed. Opponent approval sank ${dmg.toFixed(0)} points. Swing-state polls shifted. The media calls it "the most brutal ad campaign in years."`}];
+      } else if(roll<0.75){ // 25% backfire
+        const drop = G(-3,1);
+        GS.favorability=cl(GS.favorability+drop,20,85); GS.momentum=cl(GS.momentum-3,-20,20);
+        shiftBloc('sw',G(-2,0.5)); shiftBloc('in',G(-1.5,0.5));
+        return[{type:'negative',title:'🔥 Attack Blitz — BACKFIRE',msg:`The attacks were deemed too negative. Suburban women and independents recoiled. Your favorability fell ${drop.toFixed(0)} points — and the opponent raised $12M off your ads.`}];
+      } else { // 25% mixed
+        GS.opponent.favorability = cl((GS.opponent.favorability||45)-G(1.5,0.5),10,85);
+        return[{type:'neutral',title:'Attack Blitz — Wash',msg:'The ads ran, the opponent took some damage, but your negatives also ticked up. A costly draw.'}];
+      }}},
+
+  {id:'vp_announce',name:'Surprise VP Reveal',icon:'-',desc:'⚠- RISKY — Drop a surprise VP announcement mid-race. Game-changing — if the pick lands well.',cost:3,needsState:false,generalOnly:true,risk:true,
+    fx:()=>{
+      const picks=[
+        {name:'Senator from Ohio',effect:'rust',blocs:{wc:3,in:2.5},states:['OH','PA','MI','WI'],msg:'The Ohio pick dominates coverage. Rust Belt polling moves immediately. Momentum surges.',type:'positive'},
+        {name:'Governor from Georgia',effect:'sunbelt',blocs:{sw:3.5,up:1.5,in:2},states:['GA','NC','AZ'],msg:'The Georgia pick turns Sun Belt into battleground. Suburban women go from lean-opponent to coin-flip.',type:'positive'},
+        {name:'Rising star Senator',effect:'viral',blocs:{yv:4,up:2.5,ce:2},states:[],msg:'An unexpected viral pick. Young voters exploded on social media. Gen Z registration surged 18% overnight.',type:'positive'},
+        {name:'Controversial figure',effect:'risky',blocs:{rc:3,in:-2,sw:-2.5},states:['TX','FL'],msg:'A bold, divisive pick. Core base loved it. Independents and suburban women were alarmed. A true gamble.',type:'neutral'},
+      ];
+      const pick = picks[Math.floor(Math.random()*picks.length)];
+      Object.entries(pick.blocs).forEach(([k,v])=>shiftBloc(k,v));
+      pick.states.forEach(code=>{const s=GS.states.find(x=>x.code===code);if(s)s.genLead=cl(s.genLead+G(2.5,0.8),-60,60);});
+      GS.momentum=cl(GS.momentum+4,-20,20);
+      return[{type:pick.type,title:`VP Surprise: ${pick.name}`,msg:pick.msg}];}},
+
+  {id:'policy_pivot',name:'Major Policy Pivot',icon:'🔄',desc:'⚠- RISKY — Radically shift your platform. Alienate the base or pick up critical swing votes?',cost:3,needsState:false,generalOnly:true,risk:true,
+    fx:()=>{
+      const pivots=[
+        {title:'Moved Right on Border',fx:()=>{shiftBloc('in',G(3,0.8));shiftBloc('rc',G(2,0.8));shiftBloc('up',G(-3.5,0.8));shiftBloc('yv',G(-2,0.8));return{type:'neutral',msg:'Independents and rural conservatives moved toward you. Your progressive base is furious — donations dropped 22%.'};}},
+        {title:'Moved Left on Healthcare',fx:()=>{shiftBloc('up',G(3,0.8));shiftBloc('yv',G(3,0.8));shiftBloc('in',G(-2.5,0.8));shiftBloc('se',G(-1.5,0.8));return{type:'neutral',msg:'Urban progressives and young voters surged. Seniors and independents skeptical. The media declared it "a new campaign."'};}},
+        {title:'Endorsed Major Tax Cut',fx:()=>{shiftBloc('in',G(2.5,0.8));shiftBloc('sw',G(2,0.8));shiftBloc('up',G(-2,0.8));GS.momentum=cl(GS.momentum+3,-20,20);return{type:'positive',msg:'Suburban and independent voters responded warmly. Biggest fundraising day of the cycle followed. Critics say it\'s a flip-flop.'};}},
+        {title:'Cancelled Major Event Appearance',fx:()=>{GS.favorability=cl(GS.favorability-G(3,1),20,85);GS.momentum=cl(GS.momentum-4,-20,20);GS.states.filter(s=>Math.abs(s.lean)<=8).forEach(s=>s.genLead=cl(s.genLead-G(1,0.5),-60,60));return{type:'negative',msg:'🔥 Confusion in the campaign. Cancelling the appearance looked like panic. Pundits declared "the wheels are coming off."'};}},
+      ];
+      const pivot = pivots[Math.floor(Math.random()*pivots.length)];
+      const res = pivot.fx();
+      return[{type:res.type,title:`Policy Pivot: ${pivot.title}`,msg:res.msg}];}},
+  // ── ROAST ACTION ──────────────────────────────────────────────────────────
+  // Unlike traditional attacks, the Roast targets opponents with humour.
+  // Net effect: favourability is neutral to slightly positive, but youth bloc
+  // and media surge. Backfire risk is tone-dependent (mild / savage / bomb).
+  {id:'roast', name:'Roast the Frontrunner', icon:'🎤',
+   desc:'Deploy sharp political humour against the frontrunner. Boosts youth vote & media. Won\'t hurt overall favourability.',
+   outcomes:'Youth +4–8% · Media ↑↑ · Momentum ↑ · Small backfire risk',
+   cost:1.5, needsState:false,
+   fx:()=>{
+    const target = GS.phase==='primary'
+      ? (GS.aiCandidates.filter(a=>a.active).sort((a,b)=>b.delegates-a.delegates)[0]
+         || GS.aiCandidates.filter(a=>a.active).sort((a,b)=>b.approval-a.approval)[0])
+      : GS.opponent;
+    if(!target) return [{type:'neutral',title:'No Target',msg:'No one to roast right now.'}];
+
+    const tName = target.name || 'your opponent';
+    const tLast = tName.split(' ').slice(-1)[0];
+
+    // Three outcome tiers:
+    //   savage (35%) — perfect delivery, big youth / media boost, tiny backfire risk
+    //   landed  (45%) — solid joke, meaningful boost, no blowback
+    //   bombed  (20%) — crowd groans, small media bump but own fav dips
+    const roll = Math.random();
+
+    const SAVAGE_LINES = [
+      `"${tLast} says they have all the answers. I agree — unfortunately, none of them are right."`,
+      `"I asked ${tLast}'s campaign what their healthcare plan was. They said 'thoughts and prayers.' Mine actually has a budget."`,
+      `"${tLast} has a long record of public service — most of it spent explaining why the last thing didn't work."`,
+      `"${tLast} told me this race isn't about personality. That's great news — because I checked and they don't have one."`,
+      `"${tLast} called me yesterday to say I was running a negative campaign. I told them I was just fact-checking their speeches."`,
+    ];
+    const LANDED_LINES = [
+      `"${tLast} and I agree on one thing — someone needs to win this election. We just disagree on the obvious choice."`,
+      `"I want to be kind to ${tLast}. So I'll just say their campaign is... ambitious."`,
+      `"${tLast} says they'll bring fresh ideas to Washington. Bless them — they're going to need a map."`,
+      `"${tLast} is a serious candidate. Very, very serious. Almost no fun at all, actually."`,
+      `"I looked at ${tLast}'s policy platform. It's well-formatted. I'll give them that."`,
+    ];
+    const BOMBED_LINES = [
+      `"I had a great line about ${tLast}... but it turns out it was already their campaign slogan."`,
+      `"${tLast} told me to stop making jokes at their expense. I told them to stop giving me material."`,
+    ];
+
+    if(roll < 0.35){
+      // SAVAGE — viral moment
+      const line = SAVAGE_LINES[Math.floor(Math.random()*SAVAGE_LINES.length)];
+      const youthBoost = G(7,1.5);
+      const mediaBoost = G(14,3);
+      const momBoost = G(3.5,1);
+      GS.demos.youth = cl(GS.demos.youth + youthBoost, 10, 90);
+      GS.mediaCoverage = cl(GS.mediaCoverage + mediaBoost, 0, 100);
+      GS.momentum = cl(GS.momentum + momBoost, -20, 20);
+      // Roast doesn't hit overall fav — the crowd laughs WITH you
+      if(GS.phase==='primary'){
+        // Tiny approval dent to target
+        target.approval = cl(target.approval - G(1.5,0.8), 0, 80);
+      } else {
+        target.favorability = cl((target.favorability||45) - G(2,0.8), 10, 85);
+      }
+      addNews(`${GS.playerName} lands devastating political roast — ${tLast} camp furious, social media explodes`,'campaign');
+      return [{type:'positive',title:'🎤 ROAST — VIRAL MOMENT',
+        msg:`${line} The crowd erupts. Gen Z Twitter goes wild. Media coverage +${mediaBoost.toFixed(0)}%, youth support +${youthBoost.toFixed(1)}%. Momentum surges. ${tLast}'s team issues a stiff press release — which makes it funnier.`}];
+
+    } else if(roll < 0.80){
+      // LANDED — solid bit
+      const line = LANDED_LINES[Math.floor(Math.random()*LANDED_LINES.length)];
+      const youthBoost = G(4.5,1);
+      const mediaBoost = G(8,2);
+      const momBoost = G(2,0.8);
+      GS.demos.youth = cl(GS.demos.youth + youthBoost, 10, 90);
+      GS.mediaCoverage = cl(GS.mediaCoverage + mediaBoost, 0, 100);
+      GS.momentum = cl(GS.momentum + momBoost, -20, 20);
+      GS.favorability = cl(GS.favorability + G(0.8,0.4), 20, 85); // slight fav bump — likability
+      addNews(`${GS.playerName} draws laughs at ${tLast}'s expense — crowd loves it`,'campaign');
+      return [{type:'positive',title:'🎤 Roast Lands',
+        msg:`${line} The room laughs. Even some of ${tLast}'s people cracked a smile. Media coverage +${mediaBoost.toFixed(0)}%, youth support +${youthBoost.toFixed(1)}%, favorability ticks up. Humour is a weapon — and today it landed clean.`}];
+
+    } else {
+      // BOMBED — joke fell flat or backfired on tone
+      const line = BOMBED_LINES[Math.floor(Math.random()*BOMBED_LINES.length)];
+      const mediaBoost = G(5,1.5); // still got coverage, just not great
+      const favDip = G(1.8,0.6);
+      GS.mediaCoverage = cl(GS.mediaCoverage + mediaBoost, 0, 100);
+      GS.favorability = cl(GS.favorability - favDip, 20, 85);
+      GS.momentum = cl(GS.momentum - 1, -20, 20);
+      addNews(`${GS.playerName} roast attempt falls flat — pundits call it "trying too hard"`,'campaign');
+      return [{type:'negative',title:'🎤 Roast — Bombed',
+        msg:`${line} Silence. Then an awkward cough. The clip plays on cable news, but not in the way you wanted. Favorability −${favDip.toFixed(1)}%. Comedy, it turns out, is harder than it looks. ${tLast}'s team is delighted.`}];
+    }
+  }},
+
+];
+
+window.ACTIONS = ACTIONS; // expose for ai-command.js (const is not auto-global)
+// getBestOpponent is a regular hoisted function — no window alias needed,
+// hoisted globals are already accessible on window in browsers.
+// FRONTRUNNER_ACTIONS is used by game-historical.js as the standard general-election action pool.
+// It is intentionally the same set as ACTIONS — historical mode picks from it when the player
+// is ahead, and falls back to UNDERDOG_ACTIONS when trailing.
+const FRONTRUNNER_ACTIONS = ACTIONS;
+window.FRONTRUNNER_ACTIONS = FRONTRUNNER_ACTIONS;
+
+// ── UNDERDOG ACTIONS — unlocked when trailing 5+ points nationally ──────────

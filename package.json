@@ -1,0 +1,53 @@
+{
+    "name": "potuselectionsimdesktop",
+    "version": "1.0.0",
+    "description": "",
+    "main": "main.js",
+    "scripts": {
+        "start": "electron .",
+        "dist": "electron-builder",
+        "download-model": "node scripts/download-model.js",
+        "bundle-release": "powershell -ExecutionPolicy Bypass -File scripts/make-release-bundle.ps1"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "type": "commonjs",
+    "dependencies": {
+        "electron-updater": "^6.8.3",
+        "node-llama-cpp": "^3.6.0"
+    },
+    "devDependencies": {
+        "electron": "^42.0.1",
+        "electron-builder": "^26.8.1"
+    },
+    "build": {
+        "appId": "com.yourgame.app",
+        "productName": "POTUS-SIM",
+        "publish": [
+            {
+                "provider": "github",
+                "owner": "danielmdoody-ui",
+                "repo": "potus-election"
+            }
+        ],
+        "directories": {
+            "buildResources": "build"
+        },
+        "files": [
+            "**/*",
+            "!scripts/**",
+            "!**/*.md",
+            "!models/**"
+        ],
+        "win": {
+            "target": "nsis",
+            "icon": "build/icon.ico"
+        },
+        "nsis": {
+            "allowToChangeInstallationDirectory": true,
+            "oneClick": false,
+            "include": "build/installer.nsh"
+        }
+    }
+}

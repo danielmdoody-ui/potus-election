@@ -1,0 +1,12 @@
+{
+  "name": "potuselectionsimdesktop",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "node-llama-cpp": "^3.6.0"
+  }
+}

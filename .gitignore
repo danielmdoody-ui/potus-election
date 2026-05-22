@@ -1,0 +1,10 @@
+node_modules/
+dist/
+models/
+buildResources/
+.DS_Store
+npm-debug.log
+yarn-error.log
+testdir/
+test.ps1
+*.mp4

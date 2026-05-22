@@ -1,0 +1,1794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>POTUS — Presidential Election Simulator</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="election-night.css">
+<link rel="stylesheet" href="first100.css">
+</head>
+<body>
+
+<audio id="bg-music" loop preload="auto"><source src="nastelbom-background-music-486996.mp3" type="audio/mpeg"></audio>
+
+<!-- TUTORIAL OVERLAY -->
+<div class="tut-overlay" id="tut-overlay">
+  <div class="tut-backdrop" id="tut-backdrop" onclick="tutNext()"></div>
+  <div class="tut-spotlight" id="tut-spotlight"></div>
+  <div class="tut-card" id="tut-card" style="top:50%;left:50%;transform:translate(-50%,-50%)">
+    <div class="tut-eyebrow" id="tut-eyebrow">Step 1 of 9</div>
+    <div class="tut-title" id="tut-title"></div>
+    <div class="tut-body" id="tut-body"></div>
+    <div class="tut-actions">
+      <button class="tut-skip-btn" onclick="endTutorial()">Skip</button>
+      <div class="tut-dots" id="tut-dots"></div>
+      <button class="tut-next-btn" id="tut-next-btn" onclick="tutNext()">Next →</button>
+    </div>
+  </div>
+</div>
+
+<div id="map-tooltip">
+  <div class="tt-name" id="tt-name"></div>
+  <div class="tt-ev" id="tt-ev"></div>
+  <div class="tt-lead" id="tt-lead"></div>
+  <div class="tt-lead2" id="tt-lead2"></div>
+</div>
+
+<!-- ══ SETUP ══ -->
+<div id="setup-screen" class="screen active">
+
+  <!-- STEP 1: Identity -->
+  <div id="setup-step1" class="setup-step active-step">
+    <div class="setup-header">
+      <div class="eyebrow" id="setup-eyebrow">Presidential Election Simulator</div>
+      <h1 id="potus-title" style="cursor:default;user-select:none" onclick="potusClick()" title=""><span id="potus-p" style="display:inline">P</span>OTUS</h1>
+      <p>Win your party's primary, survive the convention, choose your running mate, and claim 270 electoral votes.</p>
+    </div>
+    <div class="setup-form animate-in">
+      <div class="form-row"><label class="form-label">Your Name</label><input type="text" class="form-input" id="player-name" value="Alex Morgan"></div>
+
+      <!-- Election Year -->
+      <div class="form-row">
+        <label class="form-label">Election Year</label>
+        <select class="form-input" id="election-year" onchange="onElectionYearChange()">
+          <option value="2000">2000 — Bush vs. Gore</option>
+          <option value="2004">2004 — Bush vs. Kerry</option>
+          <option value="2008">2008 — Obama vs. McCain</option>
+          <option value="2012">2012 — Obama vs. Romney</option>
+          <option value="2016">2016 — Clinton vs. Trump</option>
+          <option value="2020">2020 — Biden vs. Trump</option>
+          <option value="2024" selected>2024 — Harris vs. Trump</option>
+          <option value="custom">Custom / Future Election</option>
+        </select>
+        <div id="custom-year-row" style="display:none;margin-top:8px">
+          <input type="number" id="custom-election-year" placeholder="Election year (e.g. 2028)" min="2025" max="2100"
+            style="width:100%;padding:9px 11px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:var(--font-mono);font-size:12px;box-sizing:border-box;outline:none"
+            value="2028">
+        </div>
+        <div id="year-opponent-note" style="font-family:var(--font-mono);font-size:9px;color:var(--text3);margin-top:5px;line-height:1.6"></div>
+      </div>
+
+      <!-- Party (with custom option) -->
+      <div class="form-row">
+        <label class="form-label">Party</label>
+        <div class="party-toggle" id="party-toggle-row">
+          <button class="party-btn dem active" onclick="selectParty('dem')">🔵 Democratic</button>
+          <button class="party-btn rep" onclick="selectParty('rep')">🔴 Republican</button>
+          <button class="party-btn" style="background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.3);color:#a78bfa" onclick="selectParty('custom')">⚡ Custom Party</button>
+        </div>
+        <div id="custom-party-row" style="display:none;margin-top:8px">
+          <input type="text" id="custom-party-name" placeholder="Party name (e.g. Independence Party)" maxlength="40"
+            style="width:100%;padding:9px 11px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:'IBM Plex Sans',sans-serif;font-size:12px;box-sizing:border-box;outline:none;margin-bottom:6px">
+          <div style="display:flex;gap:8px;align-items:center">
+            <label style="font-family:var(--font-mono);font-size:9px;color:var(--text3)">Party Color:</label>
+            <input type="color" id="custom-party-color" value="#a855f7"
+              style="width:38px;height:28px;border:1px solid var(--border);border-radius:4px;background:none;cursor:pointer;padding:2px">
+            <span style="font-family:var(--font-mono);font-size:9px;color:var(--text3)">Party Icon:</span>
+            <select id="custom-party-icon" style="flex:1;padding:5px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:12px">
+              <option value="⚡">⚡ Lightning</option><option value="🦅">🦅 Eagle</option><option value="🌟">🌟 Star</option>
+              <option value="🔥">🔥 Flame</option><option value="🌿">🌿 Leaf</option><option value="🗽">🗽 Liberty</option>
+              <option value="⚖️">⚖️ Scales</option><option value="🏛️">🏛️ Capitol</option><option value="🌊">🌊 Wave</option>
+              <option value="🦁">🦁 Lion</option>
+            </select>
+          </div>
+          <div style="font-family:var(--font-mono);font-size:9px;color:var(--text3);margin-top:5px;line-height:1.5">Custom parties start as independents — you'll need to build your coalition from scratch. Harder but more dramatic.</div>
+        </div>
+      </div>
+      <div class="form-row"><label class="form-label">Home State</label>
+        <select class="form-input" id="home-state">
+          <option value="AL">Alabama</option><option value="AK">Alaska</option><option value="AZ">Arizona</option>
+          <option value="AR">Arkansas</option><option value="CA">California</option><option value="CO">Colorado</option>
+          <option value="CT">Connecticut</option><option value="DE">Delaware</option><option value="FL">Florida</option>
+          <option value="GA">Georgia</option><option value="HI">Hawaii</option><option value="ID">Idaho</option>
+          <option value="IL">Illinois</option><option value="IN">Indiana</option><option value="IA">Iowa</option>
+          <option value="KS">Kansas</option><option value="KY">Kentucky</option><option value="LA">Louisiana</option>
+          <option value="ME">Maine</option><option value="MD">Maryland</option><option value="MA">Massachusetts</option>
+          <option value="MI">Michigan</option><option value="MN">Minnesota</option><option value="MS">Mississippi</option>
+          <option value="MO">Missouri</option><option value="MT">Montana</option><option value="NE">Nebraska</option>
+          <option value="NV">Nevada</option><option value="NH">New Hampshire</option><option value="NJ">New Jersey</option>
+          <option value="NM">New Mexico</option><option value="NY">New York</option><option value="NC">North Carolina</option>
+          <option value="ND">North Dakota</option><option value="OH">Ohio</option><option value="OK">Oklahoma</option>
+          <option value="OR">Oregon</option><option value="PA" selected>Pennsylvania</option><option value="RI">Rhode Island</option>
+          <option value="SC">South Carolina</option><option value="SD">South Dakota</option><option value="TN">Tennessee</option>
+          <option value="TX">Texas</option><option value="UT">Utah</option><option value="VT">Vermont</option>
+          <option value="VA">Virginia</option><option value="WA">Washington</option><option value="WV">West Virginia</option>
+          <option value="WI">Wisconsin</option><option value="WY">Wyoming</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label class="form-label">Difficulty</label>
+        <div class="difficulty-toggle" id="diff-toggle">
+          <button class="diff-btn active" data-diff="easy" onclick="selectDiff('easy')">
+            <div style="font-size:13px;font-weight:600">Novice</div>
+            <div style="font-size:9px;opacity:.75;margin-top:2px">Forgiving AI · Fewer scandals</div>
+          </button>
+          <button class="diff-btn" data-diff="normal" onclick="selectDiff('normal')">
+            <div style="font-size:13px;font-weight:600">Veteran</div>
+            <div style="font-size:9px;opacity:.75;margin-top:2px">Balanced AI · Real challenge</div>
+          </button>
+          <button class="diff-btn" data-diff="hard" onclick="selectDiff('hard')">
+            <div style="font-size:13px;font-weight:600">Legend</div>
+            <div style="font-size:9px;opacity:.75;margin-top:2px">Ruthless AI · Brutal polls</div>
+          </button>
+        </div>
+      </div>
+      <div class="form-row" id="display-scale-row">
+        <label class="form-label">📱 Display Size</label>
+        <div class="difficulty-toggle" id="display-scale-toggle">
+          <button class="diff-btn" id="dscale-mobile" onclick="setDisplayScale('mobile',this)" title="Smaller text & panels — best for phones">📱 Mobile</button>
+          <button class="diff-btn" id="dscale-tablet" onclick="setDisplayScale('tablet',this)" title="Medium layout — best for tablets &amp; iPads">⬜ Tablet</button>
+          <button class="diff-btn" id="dscale-desktop" onclick="setDisplayScale('desktop',this)" title="Full-size layout — best for laptops &amp; desktops">🖥 Desktop</button>
+        </div>
+        <div style="font-family:var(--font-mono);font-size:10px;color:var(--text3);margin-top:4px" id="dscale-hint">Auto-detected for your screen</div>
+      </div>
+      <!-- Campaign Mode -->
+      <div class="form-row" id="campaign-mode-row">
+        <label class="form-label">🤖 Campaign Mode</label>
+        <div class="difficulty-toggle" id="campaign-mode-toggle">
+          <button class="diff-btn" data-mode="buttons" onclick="selectCampaignMode('buttons',this)">
+            <div style="font-size:13px;font-weight:600">Classic</div>
+            <div style="font-size:9px;opacity:.75;margin-top:2px">Button-based · No AI</div>
+          </button>
+          <button class="diff-btn active" data-mode="groq" onclick="selectCampaignMode('groq',this)">
+            <div style="font-size:13px;font-weight:600">✨ AI — Free</div>
+            <div style="font-size:9px;opacity:.75;margin-top:2px">Natural language · Groq</div>
+          </button>
+          <button class="diff-btn" data-mode="custom" onclick="selectCampaignMode('custom',this)">
+            <div style="font-size:13px;font-weight:600">🔑 AI — Custom</div>
+            <div style="font-size:9px;opacity:.75;margin-top:2px">Your API key</div>
+          </button>
+        </div>
+        <div id="custom-key-row" style="display:none;margin-top:8px">
+          <input type="password" id="custom-api-key" placeholder="Paste your Groq key — starts with gsk_…"
+            style="width:100%;padding:9px 11px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:var(--font-mono);font-size:11px;box-sizing:border-box;outline:none;transition:border-color .2s"
+            onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+          <div style="font-family:var(--font-mono);font-size:9px;color:var(--text3);margin-top:4px">
+            Free key at <a href="https://console.groq.com" target="_blank" rel="noopener" style="color:var(--accent)">console.groq.com</a> · Stored only in your browser
+          </div>
+        </div>
+        <div id="groq-free-note" style="display:block;margin-top:6px;font-family:var(--font-mono);font-size:9px;color:var(--text3);line-height:1.6">
+          ✓ Uses shared Groq AI — just works, no setup needed.
+        </div>
+      </div>
+
+      <button class="start-btn" onclick="goToStep2()">Define Your Backstory →</button>
+      <!-- F11 fullscreen hint — only shown on non-touch PC -->
+      <div id="f11-hint" style="display:none;text-align:center;font-family:var(--font-mono);font-size:9px;color:var(--text3);margin-top:-6px">
+        💡 On PC? Press <kbd style="border:1px solid var(--border2);border-radius:3px;padding:1px 5px;font-size:8px;color:var(--text2);background:var(--bg3)">F11</kbd> for the best fullscreen experience
+      </div>
+
+      <!-- Photo Library Picker -->
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div style="font-family:var(--font-mono);font-size:9px;color:var(--text3);letter-spacing:.1em;text-transform:uppercase">🤳 Candidate Photo</div>
+          <label style="display:flex;align-items:center;gap:5px;padding:4px 10px;background:rgba(200,168,75,.08);border:1px solid rgba(200,168,75,.25);border-radius:20px;cursor:pointer;font-family:var(--font-mono);font-size:9px;color:var(--accent);transition:all .2s" onmouseover="this.style.background='rgba(200,168,75,.15)'" onmouseout="this.style.background='rgba(200,168,75,.08)'">
+            + Upload <input type="file" accept="image/*" style="display:none" onchange="loadCustomCandidatePhoto(this)">
+          </label>
+        </div>
+        <div id="photo-library-picker" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center"></div>
+      </div>
+
+      <!-- Music Upload -->
+      <label style="display:flex;align-items:center;gap:7px;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;font-family:var(--font-mono);font-size:10px;color:var(--text2);transition:border-color .2s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+        <span style="font-size:14px">🎵</span> Upload Background Music
+        <input type="file" accept="audio/*" style="display:none" onchange="loadCustomMusic(this)">
+      </label>
+      <!-- Tour Mode -->
+            <button onclick="startTourMode()" style="padding:13px;background:transparent;border:1px solid rgba(200,168,75,.35);border-radius:var(--radius);color:var(--accent);font-family:var(--font-mono);font-size:13px;letter-spacing:.1em;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px" onmouseover="this.style.background='rgba(200,168,75,.08)';this.style.borderColor='var(--accent)'" onmouseout="this.style.background='transparent';this.style.borderColor='rgba(200,168,75,.35)'"><span style="font-size:16px">🎬</span> Watch Feature Tour <span style="font-size:10px;opacity:.6;font-family:var(--font-mono)">2:30</span></button>
+      <button onclick="openHistoricalElections()" style="padding:13px;background:transparent;border:1px solid rgba(167,139,250,.35);border-radius:var(--radius);color:#a78bfa;font-family:var(--font-mono);font-size:13px;letter-spacing:.1em;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px" onmouseover="this.style.background='rgba(167,139,250,.08)';this.style.borderColor='#a78bfa'" onmouseout="this.style.background='transparent';this.style.borderColor='rgba(167,139,250,.35)'"><span style="font-size:16px">📜</span> Play Historical Elections <span style="font-size:10px;opacity:.6;font-family:var(--font-mono)">1980–2024</span></button>
+      <button onclick="openSaveLoadModal('load')" id="continue-game-btn" style="padding:13px;background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.3);border-radius:var(--radius);color:#60a5fa;font-family:var(--font-mono);font-size:13px;letter-spacing:.1em;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px" onmouseover="this.style.background='rgba(59,130,246,.13)';this.style.borderColor='#60a5fa'" onmouseout="this.style.background='rgba(59,130,246,.06)';this.style.borderColor='rgba(59,130,246,.3)'"><span style="font-size:16px">📂</span> Continue / Load Game</button>
+      <button onclick="openAchievementsModal()" id="achievements-btn" style="padding:13px;background:transparent;border:1px solid rgba(200,168,75,.25);border-radius:var(--radius);color:#c8a84b;font-family:var(--font-mono);font-size:13px;letter-spacing:.1em;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px" onmouseover="this.style.background='rgba(200,168,75,.08)';this.style.borderColor='var(--accent)'" onmouseout="this.style.background='transparent';this.style.borderColor='rgba(200,168,75,.25)'"><span style="font-size:16px">🏆</span> Achievements <span id="achievements-count-badge" style="font-size:10px;opacity:.6;font-family:var(--font-mono)">0 / 12</span></button>
+      <div class="tut-info-box" id="tut-info-box">
+        <span class="tut-info-box-icon">🎓</span>
+        <span id="tut-info-text">Tutorial will play automatically on your first new game.</span>
+        <button class="tut-info-reset" onclick="resetTutorial()" id="tut-reset-btn" style="display:none">Reset tutorial</button>
+        <button class="tut-info-reset" onclick="skipTutorialPermanently()" id="tut-skip-perm-btn">Don't show again</button>
+      </div>
+
+      <!-- ── ELECTION SIMULATOR (always visible) ─────────────────────────── -->
+      <div id="sim-panel" style="border-top:1px solid var(--border);padding-top:16px;margin-top:4px">
+        <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:.15em;color:var(--text2);text-transform:uppercase;margin-bottom:12px">🗳 Quick Election Simulator</div>
+
+        <!-- Candidate cards with photos -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+          <!-- DEM -->
+          <div style="background:rgba(59,130,246,.05);border:1px solid rgba(59,130,246,.2);border-radius:8px;padding:10px">
+            <label style="font-family:var(--font-mono);font-size:9px;color:var(--dem);text-transform:uppercase;letter-spacing:.1em;display:block;margin-bottom:6px">🔵 Democrat</label>
+            <!-- Photo -->
+            <div style="margin-bottom:7px">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+                <div style="width:48px;height:48px;border-radius:50%;overflow:hidden;border:2px solid var(--dem);flex-shrink:0">
+                  <img id="sim-dem-photo" src="midage-white-female.jpg" style="width:100%;height:100%;object-fit:cover;object-position:center" alt="Democrat">
+                </div>
+                <div style="flex:1;min-width:0">
+                  <input id="sim-dem-name" class="form-input" style="font-size:12px;padding:6px 8px;margin-bottom:4px;width:100%;box-sizing:border-box" value="Kamala Harris" placeholder="Name">
+                  <label style="display:flex;align-items:center;gap:4px;font-family:var(--font-mono);font-size:8px;color:var(--dem);cursor:pointer;opacity:.8">
+                    + upload <input type="file" accept="image/*" style="display:none" onchange="addSimPhoto('dem',this)">
+                  </label>
+                </div>
+              </div>
+              <div id="sim-dem-photo-picker" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:4px"></div>
+            </div>
+            <input id="sim-dem-strength" type="range" min="30" max="70" value="50" style="width:100%;accent-color:var(--dem)" oninput="document.getElementById('sim-dem-str-val').textContent=this.value+'%'">
+            <div id="sim-dem-str-val" style="font-family:var(--font-mono);font-size:9px;color:var(--dem);text-align:center">50%</div>
+            <!-- Incumbent checkbox -->
+            <label style="display:flex;align-items:center;gap:5px;margin-top:6px;cursor:pointer;font-family:var(--font-mono);font-size:9px;color:var(--text2)">
+              <input type="checkbox" id="sim-dem-incumbent" onchange="updateSimIncumbent('dem')" style="accent-color:var(--dem)">
+              Incumbent President
+            </label>
+          </div>
+          <!-- REP -->
+          <div style="background:rgba(239,68,68,.05);border:1px solid rgba(239,68,68,.2);border-radius:8px;padding:10px">
+            <label style="font-family:var(--font-mono);font-size:9px;color:var(--rep);text-transform:uppercase;letter-spacing:.1em;display:block;margin-bottom:6px">🔴 Republican</label>
+          <div style="margin-bottom:7px">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+                <div style="width:48px;height:48px;border-radius:50%;overflow:hidden;border:2px solid var(--rep);flex-shrink:0">
+                  <img id="sim-rep-photo" src="midage-white-man.png" style="width:100%;height:100%;object-fit:cover;object-position:center" alt="Republican">
+                </div>
+                <div style="flex:1;min-width:0">
+                  <input id="sim-rep-name" class="form-input" style="font-size:12px;padding:6px 8px;margin-bottom:4px;width:100%;box-sizing:border-box" value="Donald Trump" placeholder="Name">
+                  <label style="display:flex;align-items:center;gap:4px;font-family:var(--font-mono);font-size:8px;color:var(--rep);cursor:pointer;opacity:.8">
+                    + upload <input type="file" accept="image/*" style="display:none" onchange="addSimPhoto('rep',this)">
+                  </label>
+                </div>
+              </div>
+              <div id="sim-rep-photo-picker" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:4px"></div>
+            </div>
+            <input id="sim-rep-strength" type="range" min="30" max="70" value="50" style="width:100%;accent-color:var(--rep)" oninput="document.getElementById('sim-rep-str-val').textContent=this.value+'%'">
+            <div id="sim-rep-str-val" style="font-family:var(--font-mono);font-size:9px;color:var(--rep);text-align:center">50%</div>
+            <label style="display:flex;align-items:center;gap:5px;margin-top:6px;cursor:pointer;font-family:var(--font-mono);font-size:9px;color:var(--text2)">
+              <input type="checkbox" id="sim-rep-incumbent" onchange="updateSimIncumbent('rep')" style="accent-color:var(--rep)">
+              Incumbent President
+            </label>
+          </div>
+        </div>
+
+        <!-- Incumbent approval (shown when incumbent selected) -->
+        <div id="sim-incumbent-panel" style="display:none;background:rgba(200,168,75,.06);border:1px solid rgba(200,168,75,.2);border-radius:7px;padding:10px;margin-bottom:10px">
+          <div style="font-family:var(--font-mono);font-size:9px;color:var(--accent);letter-spacing:.1em;margin-bottom:6px">📊 INCUMBENT APPROVAL RATING</div>
+          <input id="sim-incumbent-approval" type="range" min="25" max="65" value="47" style="width:100%;accent-color:var(--accent)" oninput="updateSimApprovalLabel()">
+          <div style="display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:8px;color:var(--text3);margin-top:4px">
+            <span>25% (Deeply Unpopular)</span>
+            <span id="sim-approval-val" style="color:var(--accent);font-weight:700">47%</span>
+            <span>(Strong) 65%</span>
+          </div>
+          <div id="sim-approval-context" style="font-family:var(--font-mono);font-size:8px;color:var(--text3);margin-top:5px;text-align:center;font-style:italic">Underwater — challenger has wind at back</div>
+        </div>
+
+        <!-- Third Party toggle -->
+        <div style="background:rgba(167,139,250,.05);border:1px solid rgba(167,139,250,.15);border-radius:7px;padding:10px;margin-bottom:10px">
+          <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-family:var(--font-mono);font-size:9px;color:var(--text2);margin-bottom:0">
+            <input type="checkbox" id="sim-third-toggle" onchange="updateSimThirdParty()" style="accent-color:#a78bfa">
+            <span style="color:#a78bfa;font-weight:600">⚡ Third Party / Independent Candidate</span>
+          </label>
+          <div id="sim-third-panel" style="display:none;margin-top:8px">
+            <input id="sim-third-name" class="form-input" style="font-size:11px;padding:5px 8px;margin-bottom:6px;width:100%;box-sizing:border-box" value="Robert Kennedy Jr." placeholder="Third Party Candidate Name">
+            <div style="font-family:var(--font-mono);font-size:8px;color:var(--text3);margin-bottom:4px">Polling popularity: <span id="sim-third-str-val" style="color:#a78bfa">8%</span></div>
+            <input id="sim-third-strength" type="range" min="2" max="35" value="8" style="width:100%;accent-color:#a78bfa" oninput="updateSimThirdStrLabel()">
+            <div style="font-family:var(--font-mono);font-size:8px;color:var(--text3);margin-top:5px;font-style:italic" id="sim-third-note">At ~15%+ they can win states. At ~35% nationally, a contested election is possible.</div>
+          </div>
+        </div>
+
+        <label style="font-family:var(--font-mono);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;display:block;margin-bottom:6px">Electoral Climate</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px" id="sim-preset-grid">
+          <button class="sim-preset-btn active" data-env="neutral"   onclick="selectSimPreset(this,'neutral')"   style="padding:8px;border:1px solid var(--accent);background:rgba(200,168,75,.1);border-radius:6px;color:var(--accent);font-family:var(--font-mono);font-size:9px;cursor:pointer;text-align:left;line-height:1.4"><b>⚖ Neutral</b><br><span style="color:var(--text3)">Balanced environment</span></button>
+          <button class="sim-preset-btn" data-env="dem"             onclick="selectSimPreset(this,'dem')"         style="padding:8px;border:1px solid var(--border);background:transparent;border-radius:6px;color:var(--text2);font-family:var(--font-mono);font-size:9px;cursor:pointer;text-align:left;line-height:1.4"><b>🌊 Dem Wave</b><br><span style="color:var(--text3)">+3 Dem environment</span></button>
+          <button class="sim-preset-btn" data-env="rep"             onclick="selectSimPreset(this,'rep')"         style="padding:8px;border:1px solid var(--border);background:transparent;border-radius:6px;color:var(--text2);font-family:var(--font-mono);font-size:9px;cursor:pointer;text-align:left;line-height:1.4"><b>🔥 Rep Wave</b><br><span style="color:var(--text3)">+3 Rep environment</span></button>
+          <button class="sim-preset-btn" data-env="volatile"        onclick="selectSimPreset(this,'volatile')"    style="padding:8px;border:1px solid var(--border);background:transparent;border-radius:6px;color:var(--text2);font-family:var(--font-mono);font-size:9px;cursor:pointer;text-align:left;line-height:1.4"><b>🌪 Volatile</b><br><span style="color:var(--text3)">Unpredictable swings</span></button>
+          <button class="sim-preset-btn" data-env="wave2008"        onclick="selectSimPreset(this,'wave2008')"    style="padding:8px;border:1px solid var(--border);background:transparent;border-radius:6px;color:var(--text2);font-family:var(--font-mono);font-size:9px;cursor:pointer;text-align:left;line-height:1.4"><b>🏛 2008 Wave</b><br><span style="color:var(--text3)">Historic Dem surge</span></button>
+          <button class="sim-preset-btn" data-env="upset2016"       onclick="selectSimPreset(this,'upset2016')"   style="padding:8px;border:1px solid var(--border);background:transparent;border-radius:6px;color:var(--text2);font-family:var(--font-mono);font-size:9px;cursor:pointer;text-align:left;line-height:1.4"><b>😱 2016 Upset</b><br><span style="color:var(--text3)">Polls miss, chaos</span></button>
+          <button class="sim-preset-btn" data-env="econ"            onclick="selectSimPreset(this,'econ')"        style="padding:8px;border:1px solid var(--border);background:transparent;border-radius:6px;color:var(--text2);font-family:var(--font-mono);font-size:9px;cursor:pointer;text-align:left;line-height:1.4"><b>📉 Econ Crisis</b><br><span style="color:var(--text3)">Incumbent punished</span></button>
+          <button class="sim-preset-btn" data-env="fatigue"         onclick="selectSimPreset(this,'fatigue')"     style="padding:8px;border:1px solid var(--border);background:transparent;border-radius:6px;color:var(--text2);font-family:var(--font-mono);font-size:9px;cursor:pointer;text-align:left;line-height:1.4"><b>😴 Inc. Fatigue</b><br><span style="color:var(--text3)">Voters want change</span></button>
+        </div>
+        <input type="hidden" id="sim-env" value="neutral">
+
+        <button onclick="runElectionSimulator()" style="width:100%;padding:11px;background:linear-gradient(135deg,#1e3a5f,#1a2d50);border:1px solid #2a4a7f;border-radius:var(--radius);color:#60a5fa;font-family:var(--font-mono);font-size:11px;cursor:pointer;letter-spacing:.08em;transition:all .2s;font-weight:600" onmouseover="this.style.background='linear-gradient(135deg,#253d6a,#1e3560)'" onmouseout="this.style.background='linear-gradient(135deg,#1e3a5f,#1a2d50)'">▶ LAUNCH ELECTION NIGHT</button>
+      </div>
+
+      <!-- ── DEV PANEL (hidden — unlock by clicking P in POTUS 5×) ────────── -->
+      <div id="dev-panel" style="display:none;border-top:1px solid #1a1a2e;padding-top:12px;margin-top:4px">
+        <div style="font-family:var(--font-mono);font-size:9px;color:#4a5568;letter-spacing:.2em;text-transform:uppercase;margin-bottom:10px;text-align:center">⚙ DEV CONSOLE UNLOCKED</div>
+        
+        <!-- Quick skips -->
+        <div style="display:flex;gap:6px;margin-bottom:8px">
+          <button onclick="devSkipToElection(false)" style="flex:1;padding:7px;background:transparent;border:1px solid #2a3348;border-radius:5px;color:#4a5568;font-family:'IBM Plex Mono',monospace;font-size:10px;cursor:pointer">⚙ Skip → Election Night</button>
+          <button onclick="devSkipToElection(true)" style="flex:1;padding:7px;background:rgba(239,68,68,.08);border:1px solid #3a2020;border-radius:5px;color:#7a4040;font-family:'IBM Plex Mono',monospace;font-size:10px;cursor:pointer">🔥 Nail-Biter</button>
+        </div>
+        
+        <!-- Cheat buttons row -->
+        <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">
+          <button onclick="devAddFunds()" style="flex:1;min-width:80px;padding:6px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);border-radius:5px;color:#4ade80;font-family:'IBM Plex Mono',monospace;font-size:9px;cursor:pointer">+$10M 💰</button>
+          <button onclick="devBoostFav()" style="flex:1;min-width:80px;padding:6px;background:rgba(200,168,75,.08);border:1px solid rgba(200,168,75,.2);border-radius:5px;color:var(--accent);font-family:'IBM Plex Mono',monospace;font-size:9px;cursor:pointer">Fav +10% ⭐</button>
+          <button onclick="devMaxMomentum()" style="flex:1;min-width:80px;padding:6px;background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.2);border-radius:5px;color:#a78bfa;font-family:'IBM Plex Mono',monospace;font-size:9px;cursor:pointer">Max Mom 🚀</button>
+          <button onclick="devFlipSwing()" style="flex:1;min-width:80px;padding:6px;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2);border-radius:5px;color:#60a5fa;font-family:'IBM Plex Mono',monospace;font-size:9px;cursor:pointer">Flip Swings 🗺</button>
+        </div>
+        
+        <!-- Second row -->
+        <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">
+          <button onclick="devNukeOpponent()" style="flex:1;min-width:80px;padding:6px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:5px;color:#f87171;font-family:'IBM Plex Mono',monospace;font-size:9px;cursor:pointer">Nuke Opponent 💥</button>
+          <button onclick="devTriggerScandal()" style="flex:1;min-width:80px;padding:6px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:5px;color:#fbbf24;font-family:'IBM Plex Mono',monospace;font-size:9px;cursor:pointer">Trigger Scandal 🚨</button>
+          <button onclick="devUnderdogMode()" style="flex:1;min-width:80px;padding:6px;background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.15);border-radius:5px;color:#f59e0b;font-family:'IBM Plex Mono',monospace;font-size:9px;cursor:pointer">Underdog Mode 📉</button>
+          <button onclick="devWinEvery()" style="flex:1;min-width:80px;padding:6px;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);border-radius:5px;color:#34d399;font-family:'IBM Plex Mono',monospace;font-size:9px;cursor:pointer">Win All States 🏆</button>
+        </div>
+        
+        <!-- Week jump -->
+        <div style="display:flex;gap:6px;margin-bottom:8px">
+          <input id="dev-week-jump" type="number" placeholder="Jump to week #" style="flex:1;padding:6px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:var(--font-mono);font-size:10px">
+          <button onclick="devJumpWeek()" style="padding:6px 12px;background:transparent;border:1px solid var(--border);border-radius:5px;color:var(--text2);font-family:'IBM Plex Mono',monospace;font-size:10px;cursor:pointer">Go</button>
+        </div>
+        <!-- Contingent election (visible when quick sim is open) -->
+        <div id="dev-contingent-row" style="margin-bottom:8px">
+          <button onclick="devForceContingentElection()" style="width:100%;padding:7px;background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.3);border-radius:5px;color:#a78bfa;font-family:'IBM Plex Mono',monospace;font-size:10px;cursor:pointer">🏛 Force Contingent Election (No 270)</button>
+        </div>
+        
+        <!-- State info -->
+        <div id="dev-state-info" style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:#2a3040;border-top:1px solid #1a1a2e;padding-top:8px;margin-top:2px;max-height:120px;overflow-y:auto;line-height:1.6">
+          <div style="color:#3a4040;letter-spacing:.1em;margin-bottom:4px">GAME STATE</div>
+          <div id="dev-state-text">Start a game to see state info.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Font credit -->
+  <div style="text-align:center;padding:8px 0 2px;font-family:var(--font-mono);font-size:9px;color:var(--text3)">
+    Typography: <a href="https://fonts.google.com/specimen/Playfair+Display" target="_blank" rel="noopener" style="color:var(--text3);text-decoration:underline;text-underline-offset:2px" class="allow-select">Playfair Display</a> &amp; <a href="https://fonts.google.com/specimen/IBM+Plex+Sans" target="_blank" rel="noopener" style="color:var(--text3);text-decoration:underline;text-underline-offset:2px" class="allow-select">IBM Plex Sans</a> via Google Fonts
+  </div>
+
+  <!-- STEP 2: Backstory -->
+  <div id="setup-step2" class="setup-step" style="display:none">
+    <div class="setup-header" style="margin-bottom:32px">
+      <div class="eyebrow" id="step2-eyebrow">Democratic Candidate</div>
+      <h1 style="font-size:clamp(32px,5vw,60px)" id="step2-name">Alex Morgan</h1>
+      <p>Shape your candidate's story — this will affect how the media and voters see you.</p>
+    </div>
+    <div class="setup-form animate-in" style="max-width:560px;gap:18px">
+
+      <div class="form-row">
+        <label class="form-label">Career Background</label>
+        <div class="backstory-grid" id="career-grid" style="grid-template-columns:repeat(3,1fr)">
+          <button class="backstory-btn active" data-val="senator" onclick="selectBackstory('career',this,'senator')">🏛️ U.S. Senator</button>
+          <button class="backstory-btn" data-val="house" onclick="selectBackstory('career',this,'house')">🏠 House Rep.</button>
+          <button class="backstory-btn" data-val="governor" onclick="selectBackstory('career',this,'governor')">🏛 Governor</button>
+          <button class="backstory-btn" data-val="mayor" onclick="selectBackstory('career',this,'mayor')">🌆 Mayor</button>
+          <button class="backstory-btn" data-val="military" onclick="selectBackstory('career',this,'military')">⭐ General</button>
+          <button class="backstory-btn" data-val="ceo" onclick="selectBackstory('career',this,'ceo')">💼 Business CEO</button>
+          <button class="backstory-btn" data-val="prosecutor" onclick="selectBackstory('career',this,'prosecutor')">⚖️ Prosecutor</button>
+          <button class="backstory-btn" data-val="vp" onclick="selectBackstory('career',this,'vp')">🤝 Former VP</button>
+          <button class="backstory-btn" data-val="activist" onclick="selectBackstory('career',this,'activist')">✊ Activist/Organiser</button>
+          <button class="backstory-btn" data-val="celebrity" onclick="selectBackstory('career',this,'celebrity')">🎬 Celebrity</button>
+          <button class="backstory-btn" data-val="doctor" onclick="selectBackstory('career',this,'doctor')">🩺 Doctor/Scientist</button>
+          <button class="backstory-btn" data-val="none" onclick="selectBackstory('career',this,'none')">👤 No Prior Experience</button>
+        </div>
+        <div id="career-desc" style="font-family:var(--font-mono);font-size:9px;color:var(--text3);margin-top:7px;padding:7px 10px;background:var(--bg3);border-radius:6px;line-height:1.6;display:none"></div>
+      </div>
+
+      <div class="form-row">
+        <label class="form-label">Defining Moment</label>
+        <select class="form-input" id="moment-select">
+          <option value="healthcare">Passed landmark healthcare reform</option>
+          <option value="civil_rights">Championed major civil rights legislation</option>
+          <option value="corruption">Exposed a major corruption scandal</option>
+          <option value="climate">Led landmark climate agreement</option>
+          <option value="crisis">Guided the nation through a major crisis</option>
+        </select>
+      </div>
+
+      <div class="form-row">
+        <label class="form-label">Campaign Slogan <span style="color:var(--text3);font-size:10px">(optional)</span></label>
+        <input type="text" class="form-input" id="slogan-input" placeholder="e.g. Strength, Dignity, Progress" maxlength="50">
+      </div>
+
+      <div class="form-row">
+        <label class="form-label" style="display:flex;justify-content:space-between">
+          <span>Political Ideology</span>
+          <span id="ideology-label" style="color:var(--accent)">Moderate</span>
+        </label>
+        <div style="padding:8px 0">
+          <input type="range" id="ideology-slider" min="0" max="100" value="50"
+            oninput="updateIdeologyLabel(this.value)"
+            style="width:100%;accent-color:var(--accent);cursor:pointer">
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text3);font-family:var(--font-mono);margin-top:4px">
+            <span id="ideology-left-label">Progressive</span>
+            <span>Moderate</span>
+            <span id="ideology-right-label">Conservative</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px">
+        <button class="start-btn" onclick="goToStep1()" style="flex:0 0 auto;padding:16px 20px;background:transparent;border:1px solid var(--border2);color:var(--text2)">← Back</button>
+        <button class="start-btn" onclick="goToPolicyStep()" style="flex:1">Set Policy Platform →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 4: Policy Platform -->
+  <div id="setup-step4" class="setup-step" style="display:none">
+    <div class="setup-header" style="margin-bottom:28px">
+      <div class="eyebrow">Define Your Platform</div>
+      <h1 style="font-size:clamp(28px,5vw,52px)">Policy Positions</h1>
+      <p>Your stances will boost support in some states, hurt it in others, and shape how voters see you throughout the campaign.</p>
+    </div>
+    <div class="setup-form animate-in" style="max-width:600px;gap:6px">
+      <div id="policy-step-content"></div>
+      <div class="policy-preview" id="policy-preview">Choose a stance above to see how it affects your campaign.</div>
+      <div style="display:flex;gap:10px;margin-top:12px">
+        <button class="start-btn" onclick="goToStep3FromPolicy()" style="flex:0 0 auto;padding:16px 20px;background:transparent;border:1px solid var(--border2);color:var(--text2)">← Back</button>
+        <button class="start-btn" onclick="launchIntro()" style="flex:1" id="policy-next-btn">See Your Announcement →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 3: Cinematic Intro / News Article -->
+  <div id="setup-step3" class="setup-step" style="display:none">
+    <div class="intro-screen" id="intro-screen">
+      <div class="intro-newspaper">
+        <div class="newspaper-header">
+          <div class="newspaper-flag">The National Herald</div>
+          <div class="newspaper-date" id="intro-date"></div>
+        </div>
+        <div class="newspaper-kicker" id="intro-kicker">BREAKING NEWS</div>
+        <h1 class="newspaper-headline" id="intro-headline"></h1>
+        <div class="newspaper-byline" id="intro-byline"></div>
+        <div class="newspaper-columns">
+          <div class="newspaper-col" id="intro-col1"></div>
+          <div class="newspaper-col" id="intro-col2"></div>
+        </div>
+        <div class="newspaper-pullquote" id="intro-pullquote"></div>
+      </div>
+      <div class="intro-actions">
+        <div class="intro-ticker" id="intro-ticker"></div>
+        <button class="start-btn" onclick="startGame()" style="width:280px;margin:0 auto">Begin Campaign →</button>
+      </div>
+    </div>
+  </div>
+
+
+
+</div>
+
+<!-- ══ HISTORICAL ELECTIONS SCREEN ══ -->
+<div id="hist-screen" class="screen" style="overflow-y:auto;background:var(--bg)">
+  <div style="max-width:820px;margin:0 auto;padding:32px 20px 48px">
+    <div style="text-align:center;margin-bottom:32px">
+      <div style="font-family:var(--font-mono);font-size:11px;letter-spacing:.3em;color:#a78bfa;text-transform:uppercase;margin-bottom:10px">📜 Historical Campaigns</div>
+      <h1 style="font-family:var(--font-display);font-size:clamp(28px,6vw,64px);font-weight:900;background:linear-gradient(135deg,#fff,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1">Relive History</h1>
+      <p style="margin-top:12px;color:var(--text2);font-size:14px;max-width:480px;margin-left:auto;margin-right:auto;line-height:1.6">Play the general election as real candidates — with accurate state maps, national mood, and congressional conditions.</p>
+    </div>
+
+    <!-- Difficulty row (reused) -->
+    <div style="width:100%;max-width:760px;margin:0 auto 16px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <div style="font-family:var(--font-mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.15em;flex-shrink:0">Difficulty</div>
+      <div class="difficulty-toggle" style="flex:1;min-width:200px">
+        <button class="diff-btn active" data-diff="easy" onclick="selectDiff('easy')">Novice</button>
+        <button class="diff-btn" data-diff="normal" onclick="selectDiff('normal')">Veteran</button>
+        <button class="diff-btn" data-diff="hard" onclick="selectDiff('hard')">Legend</button>
+      </div>
+      <button onclick="closeHistoricalScreen()" style="padding:9px 16px;background:transparent;border:1px solid var(--border2);border-radius:var(--radius);color:var(--text2);font-family:var(--font-mono);font-size:11px;cursor:pointer;flex-shrink:0" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--text2)'">← Main Menu</button>
+    </div>
+
+    <div id="hist-grid" style="width:100%;max-width:760px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px"></div>
+
+    <!-- Confirmation panel -->
+    <div id="hist-confirm" style="display:none;width:100%;max-width:560px;margin:16px auto 0;background:var(--bg2);border:1px solid rgba(167,139,250,.3);border-radius:12px;padding:20px 22px">
+      <div id="hist-confirm-inner"></div>
+    </div>
+  </div>
+</div>
+
+
+
+  <!-- ══ AD GENERATOR MODAL ══ -->
+  <div class="modal-overlay" id="ad-modal">
+    <div class="modal" style="max-width:500px">
+      <div class="modal-header">
+        <div class="modal-title">📺 Political Ad Generator</div>
+        <button class="modal-close" onclick="closeModal('ad-modal')">×</button>
+      </div>
+      <div class="modal-body">
+        <div style="font-family:var(--font-mono);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">Ad Type</div>
+        <div class="ad-type-grid" id="ad-type-grid"></div>
+        <div style="font-family:var(--font-mono);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">Generated Script</div>
+        <div class="ad-script-box" id="ad-script-box">Select an ad type above to generate a script.</div>
+        <div class="ad-cost-row">
+          <span id="ad-cost-label"></span>
+          <button id="ad-run-btn" onclick="runGeneratedAd()" style="padding:6px 14px;background:var(--accent);border:none;border-radius:var(--radius);color:#0a0c10;font-weight:700;font-size:11px;cursor:pointer;display:none">▶ Run This Ad (−$4M)</button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn secondary" onclick="closeModal('ad-modal')">Close</button>
+        <button class="modal-btn primary" onclick="generateAdScript()">↺ Re-generate</button>
+      </div>
+    </div>
+  </div>
+
+<!-- ══ GAME ══ -->
+<div id="game-screen" class="screen">
+  <div class="topbar">
+    <div class="topbar-logo">POTUS</div>
+    <div class="topbar-phase" id="topbar-phase">Primary Season</div>
+    <div class="phase-indicator">
+      <div class="phase-step current" id="phase-primary">Primary</div>
+      <div class="phase-step" id="phase-convention">Convention</div>
+      <div class="phase-step" id="phase-general">General</div>
+    </div>
+    <button class="mute-btn" id="mute-btn" onclick="toggleMute()" title="Mute/unmute music">🔊</button>
+    <button class="mute-btn" onclick="openSettingsModal()" title="UI Settings" style="font-size:14px">⚙</button>
+    <div class="topbar-stats">
+      <div class="topbar-stat"><span class="label">Week</span><span class="value" id="stat-week">1</span></div>
+      <div class="topbar-stat" id="weeks-left-stat"><span class="label">Weeks Left</span><span class="value" id="stat-weeks-left">20</span></div>
+      <div class="topbar-stat"><span class="label">Funds</span><span class="value gold" id="stat-funds">$25M</span></div>
+      <div class="topbar-stat"><span class="label">Momentum</span><span class="value" id="stat-momentum">+0.0</span></div>
+      <div class="topbar-stat"><span class="label">Approval</span><span class="value" id="stat-approval">42%</span></div>
+      <div class="topbar-stat" id="stat-streak-wrap" style="display:none" title="Consecutive weeks with a campaign action selected"><span class="label">Streak</span><span class="value" id="stat-streak">🔥0</span></div>
+      <div class="topbar-stat" id="stat-delegates-wrap"><span class="label">Delegates</span><span class="value" id="stat-delegates">0</span></div>
+    </div>
+  </div>
+  <div class="game-body">
+    <!-- LEFT -->
+    <div class="left-panel">
+      <div class="panel-section">
+        <div class="panel-title">Candidate</div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+          <label style="position:relative;width:48px;height:48px;border-radius:50%;overflow:hidden;cursor:pointer;flex-shrink:0;border:2px solid var(--border);transition:border-color .2s" title="Click to upload your photo" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+            <img id="cand-portrait" src="" alt="" style="width:100%;height:100%;object-fit:cover;object-position:center center;display:none">
+            <div id="cand-portrait-placeholder" style="width:100%;height:100%;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:20px">👤</div>
+            <input type="file" accept="image/*" style="display:none;position:absolute;inset:0" onchange="loadCustomCandidatePhoto(this)">
+          </label>
+          <div>
+            <div class="candidate-name" id="cand-name">Alex Morgan</div>
+            <div class="candidate-tag" id="cand-party-tag">Democratic · Senator</div>
+          </div>
+        </div>
+        <div class="stat-bars">
+          <div class="stat-bar-row"><div class="stat-bar-label"><span>Favorability</span><span id="bar-fav">42%</span></div><div class="stat-bar-bg"><div class="stat-bar-fill gold" id="fill-fav" style="width:42%"></div></div></div>
+          <div class="stat-bar-row"><div class="stat-bar-label"><span>Electability</span><span id="bar-elec">55%</span></div><div class="stat-bar-bg"><div class="stat-bar-fill blue" id="fill-elec" style="width:55%"></div></div></div>
+          <div class="stat-bar-row"><div class="stat-bar-label"><span>Ground Game</span><span id="bar-ground">30%</span></div><div class="stat-bar-bg"><div class="stat-bar-fill green" id="fill-ground" style="width:30%"></div></div></div>
+          <div class="stat-bar-row"><div class="stat-bar-label"><span>Media</span><span id="bar-media">40%</span></div><div class="stat-bar-bg"><div class="stat-bar-fill purple" id="fill-media" style="width:40%"></div></div></div>
+        </div>
+      </div>
+      <div class="panel-section factions-section" id="faction-panel">
+        <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between">
+          <span>Party Factions</span>
+          <span style="font-family:var(--font-mono);font-size:8px;color:var(--text3)" id="faction-turnout-label"></span>
+        </div>
+        <div id="faction-list"></div>
+      </div>
+      <div class="panel-section">
+        <div class="panel-title">Weekly Action <span style="color:var(--text3);font-size:9px">(pick 1)</span></div>
+        <div id="debate-alert" style="display:none;margin-bottom:7px" class="debate-banner"></div>
+        <div class="action-tabs" id="action-tabs"></div>
+        <div class="actions-grid" id="actions-grid"></div>
+      </div>
+      <div id="state-target-section" class="panel-section" style="display:none">
+        <div class="panel-title">Target State</div>
+        <select class="form-input" id="target-state-select" style="width:100%"><option value="">— Select state —</option></select>
+      </div>
+      <button class="next-week-btn" type="button" onclick="nextWeek()">End Week →</button>
+      <div style="padding:0 12px 8px">
+        <button onclick="openAdModal()" style="
+            width:100%;padding:8px 12px;
+            background:linear-gradient(135deg,rgba(200,168,75,.13),rgba(200,168,75,.06));
+            border:1px solid rgba(200,168,75,.45);border-radius:var(--radius);
+            color:var(--accent);font-family:var(--font-mono);font-size:10px;font-weight:700;
+            cursor:pointer;letter-spacing:.06em;transition:all .18s;text-align:center;"
+          onmouseover="this.style.background='rgba(200,168,75,.22)';this.style.borderColor='var(--accent)'"
+          onmouseout="this.style.background='linear-gradient(135deg,rgba(200,168,75,.13),rgba(200,168,75,.06))';this.style.borderColor='rgba(200,168,75,.45)'">
+          📺 Political Ad Generator
+        </button>
+      </div>
+      <div style="display:flex;gap:5px;padding:0 12px 6px">
+        <button onclick="startTutorial()" style="flex:1;padding:5px 6px;background:transparent;border:1px solid var(--border);border-radius:var(--radius);color:var(--text3);font-family:var(--font-mono);font-size:9px;cursor:pointer" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text3)'">? Tutorial</button>
+        <button onclick="openPolicyModal()" style="flex:1;padding:5px 6px;background:transparent;border:1px solid var(--border);border-radius:var(--radius);color:var(--text3);font-family:var(--font-mono);font-size:9px;cursor:pointer" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text3)'">🧾 Platform</button>
+        <button onclick="openSaveLoadModal('save')" style="flex:1;padding:5px 6px;background:rgba(200,168,75,.06);border:1px solid rgba(200,168,75,.25);border-radius:var(--radius);color:#c8a84b;font-family:var(--font-mono);font-size:9px;cursor:pointer" onmouseover="this.style.background='rgba(200,168,75,.14)'" onmouseout="this.style.background='rgba(200,168,75,.06)'">💾 Save</button>
+        <button onclick="openSaveLoadModal('load')" style="flex:1;padding:5px 6px;background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.25);border-radius:var(--radius);color:#60a5fa;font-family:var(--font-mono);font-size:9px;cursor:pointer" onmouseover="this.style.background='rgba(59,130,246,.14)'" onmouseout="this.style.background='rgba(59,130,246,.06)'">📂 Load</button>
+      </div>
+      <div style="padding:0 12px 10px;font-family:var(--font-mono);font-size:8.5px;color:var(--text3);line-height:1.8">
+        <span title="Press N to end the week" style="cursor:default;margin-right:10px;border:1px solid var(--border);border-radius:3px;padding:1px 4px;font-size:8px">N</span>End Week
+        &nbsp;&nbsp;
+        <span title="Press Esc to close modals" style="cursor:default;border:1px solid var(--border);border-radius:3px;padding:1px 4px;font-size:8px">Esc</span> Close
+      </div>
+      <div id="game-dev-panel" style="display:none;margin:0 12px 12px;padding:10px;background:#080c14;border:1px solid #1a2535;border-radius:6px">
+        <div style="font-family:var(--font-mono);font-size:9px;color:#4a5568;letter-spacing:.2em;text-transform:uppercase;margin-bottom:8px;text-align:center">⚙ DEV CONSOLE</div>
+        <div style="display:flex;gap:4px;margin-bottom:6px;flex-wrap:wrap">
+          <button onclick="devAddFunds()" style="flex:1;min-width:70px;padding:5px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);border-radius:4px;color:#4ade80;font-family:'IBM Plex Mono',monospace;font-size:8px;cursor:pointer">+$10M 💰</button>
+          <button onclick="devBoostFav()" style="flex:1;min-width:70px;padding:5px;background:rgba(200,168,75,.08);border:1px solid rgba(200,168,75,.2);border-radius:4px;color:var(--accent);font-family:'IBM Plex Mono',monospace;font-size:8px;cursor:pointer">Fav +10 ⭐</button>
+          <button onclick="devMaxMomentum()" style="flex:1;min-width:70px;padding:5px;background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.2);border-radius:4px;color:#a78bfa;font-family:'IBM Plex Mono',monospace;font-size:8px;cursor:pointer">Max Mom 🚀</button>
+        </div>
+        <div style="display:flex;gap:4px;margin-bottom:6px;flex-wrap:wrap">
+          <button onclick="devNukeOpponent()" style="flex:1;min-width:70px;padding:5px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:4px;color:#f87171;font-family:'IBM Plex Mono',monospace;font-size:8px;cursor:pointer">Nuke Opp 💥</button>
+          <button onclick="devFlipSwing()" style="flex:1;min-width:70px;padding:5px;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2);border-radius:4px;color:#60a5fa;font-family:'IBM Plex Mono',monospace;font-size:8px;cursor:pointer">Flip Swings 🗺</button>
+          <button onclick="devWinEvery()" style="flex:1;min-width:70px;padding:5px;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);border-radius:4px;color:#34d399;font-family:'IBM Plex Mono',monospace;font-size:8px;cursor:pointer">Win All 🏆</button>
+        </div>
+        <div style="display:flex;gap:4px;margin-bottom:6px">
+          <button onclick="devTriggerScandal()" style="flex:1;padding:5px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:4px;color:#fbbf24;font-family:'IBM Plex Mono',monospace;font-size:8px;cursor:pointer">Scandal 🚨</button>
+          <button onclick="devUnderdogMode()" style="flex:1;padding:5px;background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.15);border-radius:4px;color:#f59e0b;font-family:'IBM Plex Mono',monospace;font-size:8px;cursor:pointer">Underdog 📉</button>
+          <button onclick="devSkipToGeneralInGame()" style="flex:1;padding:5px;background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.2);border-radius:4px;color:#a78bfa;font-family:'IBM Plex Mono',monospace;font-size:8px;cursor:pointer">→ General ⚡</button>
+        </div>
+        <div style="display:flex;gap:4px">
+          <input id="game-dev-week-jump" type="number" placeholder="Week #" style="flex:1;padding:5px 7px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--font-mono);font-size:9px">
+          <button onclick="devJumpWeekGame()" style="padding:5px 10px;background:transparent;border:1px solid var(--border);border-radius:4px;color:var(--text2);font-family:'IBM Plex Mono',monospace;font-size:9px;cursor:pointer">Go</button>
+        </div>
+        <div id="game-dev-state-text" style="font-family:'IBM Plex Mono',monospace;font-size:8px;color:#3a4040;margin-top:6px;border-top:1px solid #1a2535;padding-top:5px;line-height:1.5;max-height:80px;overflow-y:auto"></div>
+        <!-- Tour Mode -->
+        <div style="border-top:1px solid #1a2535;margin-top:8px;padding-top:8px">
+          <button onclick="startTourMode()" style="width:100%;padding:8px;background:linear-gradient(135deg,rgba(200,168,75,.15),rgba(200,168,75,.08));border:1px solid rgba(200,168,75,.4);border-radius:5px;color:#c8a84b;font-family:'IBM Plex Mono',monospace;font-size:10px;cursor:pointer;letter-spacing:.1em;font-weight:700;transition:all .2s" onmouseover="this.style.background='linear-gradient(135deg,rgba(200,168,75,.25),rgba(200,168,75,.12))'" onmouseout="this.style.background='linear-gradient(135deg,rgba(200,168,75,.15),rgba(200,168,75,.08))'">🎬 TOUR MODE — Cinematic Showcase</button>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:8px;color:#3a4040;text-align:center;margin-top:4px">Cinematic 2:30 feature showcase</div>
+        </div>
+      </div>
+      <div class="panel-section">
+        <div class="panel-title" id="opponent-panel-title">Primary Opponents</div>
+        <div class="ai-candidates" id="ai-candidates-list"></div>
+      </div>
+    </div>
+
+    <!-- CENTER -->
+    <div class="center-panel">
+      <!-- PRIMARY -->
+      <div id="primary-content">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px">
+          <div style="font-family:var(--font-display);font-size:16px;font-weight:700">Primary Map</div>
+          <div style="font-family:var(--font-mono);font-size:10px;color:var(--text2)">Need <span id="delegates-needed" style="color:var(--accent)">1991</span> delegates · <span style="color:var(--text3)">colour = current leader</span></div>
+        </div>
+        <div class="delegate-bar" id="delegate-bar"></div>
+        <div id="delegate-candidates" style="margin-bottom:11px"></div>
+        <div class="map-container"><svg id="us-map-primary" viewBox="0 0 960 600" xmlns="http://www.w3.org/2000/svg" style="display:block;width:100%"></svg></div>
+        <div class="map-legend" id="primary-legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#c8a84b"></div>You leading</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#22d3ee"></div>Hawkins</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#f472b6"></div>Chen</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#84cc16"></div>Torres</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#f97316"></div>Park</div>
+        </div>
+      </div>
+
+      <!-- GENERAL -->
+      <div id="general-content" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+          <div style="font-family:var(--font-display);font-size:16px;font-weight:700">Electoral College</div>
+          <div class="ev-tracker">
+            <span class="ev-count dem" id="ev-dem">0</span>
+            <span class="ev-divider">—</span>
+            <span class="ev-count rep" id="ev-rep">0</span>
+            <span class="ev-divider" id="ev-divider-third" style="display:none">—</span>
+            <span class="ev-count third" id="ev-third" style="display:none">0</span>
+            <span class="ev-target">Need 270</span>
+          </div>
+        </div>
+        <div style="font-family:var(--font-mono);font-size:8px;color:#6b7280;text-align:center;margin-bottom:5px;letter-spacing:.06em">📊 POLLING PROJECTION — based on current polls, not final results</div>
+        <div class="ev-bar"><div class="ev-bar-dem" id="ev-bar-dem" style="width:0%"></div><div class="ev-bar-toss" id="ev-bar-toss" style="width:100%"></div><div class="ev-bar-rep" id="ev-bar-rep" style="width:0%"></div></div>
+        <div class="map-container"><svg id="us-map-general" viewBox="0 0 960 600" xmlns="http://www.w3.org/2000/svg" style="display:block;width:100%"></svg></div>
+        <div class="map-legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#1e3a8a"></div>Safe D</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#93c5fd"></div>Lean D</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#6b7280"></div>Toss-Up</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#fca5a5"></div>Lean R</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#7f1d1d"></div>Safe R</div>
+        </div>
+      </div>
+
+      <!-- SENATE & HOUSE TRACKER -->
+      <div id="congress-tracker" style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:13px;display:none">
+        <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:.15em;color:var(--text3);text-transform:uppercase;margin-bottom:10px">🏛 Congressional Races</div>
+        <!-- Senate -->
+        <div style="margin-bottom:12px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+            <div style="font-size:12px;font-weight:600;color:var(--text)">Senate <span style="font-family:var(--font-mono);font-size:9px;color:var(--text3)">(need 51)</span></div>
+            <div style="display:flex;gap:12px;align-items:center">
+              <span style="font-family:var(--font-mono);font-size:13px;font-weight:700;color:var(--dem)" id="senate-dem-seats">47</span>
+              <span style="font-family:var(--font-mono);font-size:9px;color:var(--text3)">—</span>
+              <span style="font-family:var(--font-mono);font-size:13px;font-weight:700;color:var(--rep)" id="senate-rep-seats">53</span>
+            </div>
+          </div>
+          <div style="height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;position:relative">
+            <div id="senate-bar-dem" style="position:absolute;left:0;top:0;height:100%;background:var(--dem);transition:width .8s ease" style="width:47%"></div>
+            <div id="senate-bar-rep" style="position:absolute;right:0;top:0;height:100%;background:var(--rep);transition:width .8s ease" style="width:53%"></div>
+            <div style="position:absolute;left:50%;top:-2px;width:2px;height:calc(100%+4px);background:var(--accent);opacity:.7"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:4px;font-family:var(--font-mono);font-size:8px;color:var(--text3)">
+            <span>DEM</span><span>REP</span>
+          </div>
+        </div>
+        <!-- House -->
+        <div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+            <div style="font-size:12px;font-weight:600;color:var(--text)">House <span style="font-family:var(--font-mono);font-size:9px;color:var(--text3)">(need 218)</span></div>
+            <div style="display:flex;gap:12px;align-items:center">
+              <span style="font-family:var(--font-mono);font-size:13px;font-weight:700;color:var(--dem)" id="house-dem-seats">210</span>
+              <span style="font-family:var(--font-mono);font-size:9px;color:var(--text3)">—</span>
+              <span style="font-family:var(--font-mono);font-size:13px;font-weight:700;color:var(--rep)" id="house-rep-seats">225</span>
+            </div>
+          </div>
+          <div style="height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;position:relative">
+            <div id="house-bar-dem" style="position:absolute;left:0;top:0;height:100%;background:var(--dem);transition:width .8s ease;width:45%"></div>
+            <div id="house-bar-rep" style="position:absolute;right:0;top:0;height:100%;background:var(--rep);transition:width .8s ease;width:55%"></div>
+            <div style="position:absolute;left:50%;top:-2px;width:2px;height:calc(100%+4px);background:var(--accent);opacity:.7"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:4px;font-family:var(--font-mono);font-size:8px;color:var(--text3)">
+            <span>DEM</span><span>REP</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI ADVISOR (injected above polls by ai-command.js) -->
+      <div id="ai-advisor-mount"></div>
+
+      <!-- POLLS -->
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:13px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px">
+          <div class="panel-title" style="margin-bottom:0" id="polls-title">National Primary Poll</div>
+          <div id="win-prob-display" style="font-family:var(--font-mono);font-size:11px"></div>
+        </div>
+        <div id="national-polls"></div>
+        <div id="fav-sparkline" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)"></div>
+        <!-- Win probability — always visible, shown for both phases -->
+        <div id="win-prob-bar-wrap" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:10px;color:var(--text3);font-family:var(--font-mono);margin-bottom:4px">
+            <span id="win-prob-label">Chance of Victory</span>
+            <span id="win-prob-pct" style="font-size:13px;font-weight:600;color:var(--accent)">—</span>
+          </div>
+          <div class="win-prob-bar"><div class="win-prob-fill" id="win-prob-fill" style="width:50%"></div></div>
+          <div id="win-prob-breakdown" style="font-family:var(--font-mono);font-size:8.5px;color:var(--text3);margin-top:5px;line-height:1.7"></div>
+        </div>
+      </div>
+
+      <!-- COMPASS + MOOD + VP (below polls, above battleground) -->
+      <div id="compass-section" style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div class="panel-title" style="margin-bottom:0">🧭 Political Compass</div>
+          <span style="font-family:var(--font-mono);font-size:9px;color:var(--accent);background:rgba(200,168,75,.1);padding:3px 8px;border-radius:100px;border:1px solid rgba(200,168,75,.25)" id="compass-label">Moderate</span>
+        </div>
+        <!-- compass + side stats in a row -->
+        <div style="display:flex;gap:14px;align-items:flex-start">
+          <div class="pcompass-wrap" id="compass-wrap" onmouseenter="showCompassTooltip()" onmouseleave="hideCompassTooltip()">
+            <svg id="compass-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"></svg>
+            <div class="compass-tooltip" id="compass-tooltip">
+              <strong>🧭 Political Compass</strong>
+              <div style="margin-top:7px;font-size:10.5px">
+                <div style="margin-bottom:5px"><span style="color:#3b82f6">◀ Economic Left</span> — Gov-led economy, welfare, redistribution</div>
+                <div style="margin-bottom:5px"><span style="color:#ef4444">Economic Right ▶</span> — Free markets, low taxes, deregulation</div>
+                <div style="margin-bottom:5px"><span style="color:#a78bfa">▲ Authoritarian</span> — Strong state, law &amp; order focus</div>
+                <div style="margin-bottom:5px"><span style="color:#22c55e">▼ Libertarian</span> — Civil liberties, personal freedom</div>
+                <div style="margin-top:8px;padding-top:7px;border-top:1px solid var(--border)">Your <span style="color:var(--accent)">●</span> dot moves as you adopt stances. Trail shows recent drift.</div>
+              </div>
+              <div class="compass-tooltip-arrow"></div>
+            </div>
+          </div>
+          <!-- axis labels + position stats -->
+          <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:8px">
+            <!-- axis labels -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px">
+              <div style="font-family:var(--font-mono);font-size:9px;color:#3b82f6;background:rgba(59,130,246,.07);padding:4px 6px;border-radius:4px;border:1px solid rgba(59,130,246,.15)">◀ Left<br><span style="color:var(--text3);font-size:8px">Econ. Left</span></div>
+              <div style="font-family:var(--font-mono);font-size:9px;color:#ef4444;background:rgba(239,68,68,.07);padding:4px 6px;border-radius:4px;border:1px solid rgba(239,68,68,.15);text-align:right">Right ▶<br><span style="color:var(--text3);font-size:8px">Econ. Right</span></div>
+              <div style="font-family:var(--font-mono);font-size:9px;color:#a78bfa;background:rgba(167,139,250,.07);padding:4px 6px;border-radius:4px;border:1px solid rgba(167,139,250,.15)">▲ Auth<br><span style="color:var(--text3);font-size:8px">Authoritarian</span></div>
+              <div style="font-family:var(--font-mono);font-size:9px;color:#22c55e;background:rgba(34,197,94,.07);padding:4px 6px;border-radius:4px;border:1px solid rgba(34,197,94,.15);text-align:right">Lib ▼<br><span style="color:var(--text3);font-size:8px">Libertarian</span></div>
+            </div>
+            <!-- position readout -->
+            <div id="compass-readout" style="font-family:var(--font-mono);font-size:9px;color:var(--text3);background:var(--bg3);padding:7px 9px;border-radius:5px;border:1px solid var(--border);line-height:1.8">
+              <div>Economic: <span id="compass-econ-text" style="color:var(--text2)">—</span></div>
+              <div>Social: <span id="compass-social-text" style="color:var(--text2)">—</span></div>
+            </div>
+            <div id="mood-display-inner" style="display:none"></div>
+            <div id="vp-display-inner" style="display:none"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BATTLEGROUND -->
+      <div id="battleground-section" style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:13px;display:none">
+        <div class="panel-title">Battleground States</div>
+        <div id="battleground-polls"></div>
+      </div>
+
+      <!-- VOTER BLOCS COMPACT (center panel, visible in general phase) -->
+      <div id="center-blocs-section" style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:13px;display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px">
+          <div class="panel-title" style="margin-bottom:0">🧩 Voter Coalition Tracker</div>
+          <div style="font-family:var(--font-mono);font-size:8px;color:var(--text3)">GENERAL ELECTION</div>
+        </div>
+        <div id="center-blocs-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px"></div>
+      </div>
+
+      <!-- SAFE STATE SHIELD NOTICE (shows when player targets a safe state) -->
+      <div id="safe-state-notice" style="display:none;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.25);border-radius:8px;padding:11px 13px">
+        <div style="font-family:var(--font-mono);font-size:9px;color:#f87171;letter-spacing:.12em;margin-bottom:5px">🔒 SAFE STATE TERRITORY</div>
+        <div style="font-size:11px;color:var(--text2);line-height:1.5" id="safe-state-notice-text">This state's partisan lean makes it nearly immune to campaign actions. Focus your resources on competitive battlegrounds.</div>
+      </div>
+
+      <!-- SITUATION ROOM -->
+      <div id="situation-room" style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:13px;display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div class="panel-title" style="margin-bottom:0">🎯 Situation Room</div>
+          <div style="font-family:var(--font-mono);font-size:8px;color:var(--text3);letter-spacing:.08em">INTEL BRIEF</div>
+        </div>
+        <div id="situation-room-inner"></div>
+      </div>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="right-panel">
+      <div class="panel-section"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div class="panel-title" style="margin-bottom:0">Campaign Dispatch</div><div style="font-family:var(--font-mono);font-size:8px;color:var(--text3)">click headline to cycle framing</div></div><div class="news-feed" id="news-feed"></div></div>
+      <div class="panel-section">
+        <div class="panel-title">Demographics</div>
+        <div class="stat-bars">
+          <div class="stat-bar-row"><div class="stat-bar-label"><span>🏙 Urban</span><span id="demo-urban">52%</span></div><div class="stat-bar-bg"><div class="stat-bar-fill blue" id="fill-urban" style="width:52%"></div></div></div>
+          <div class="stat-bar-row"><div class="stat-bar-label"><span>🏘 Suburban</span><span id="demo-suburban">45%</span></div><div class="stat-bar-bg"><div class="stat-bar-fill purple" id="fill-suburban" style="width:45%"></div></div></div>
+          <div class="stat-bar-row"><div class="stat-bar-label"><span>🌾 Rural</span><span id="demo-rural">28%</span></div><div class="stat-bar-bg"><div class="stat-bar-fill gold" id="fill-rural" style="width:28%"></div></div></div>
+          <div class="stat-bar-row"><div class="stat-bar-label"><span>🎓 Youth</span><span id="demo-youth">38%</span></div><div class="stat-bar-bg"><div class="stat-bar-fill green" id="fill-youth" style="width:38%"></div></div></div>
+          <div class="stat-bar-row"><div class="stat-bar-label"><span>👴 Seniors</span><span id="demo-seniors">41%</span></div><div class="stat-bar-bg"><div class="stat-bar-fill gold" id="fill-seniors" style="width:41%"></div></div></div>
+        </div>
+      </div>
+      <div class="panel-section" id="advisor-section">
+        <div class="panel-title">📋 Campaign Advisor</div>
+        <div id="advisor-panel" style="display:flex;flex-direction:column;gap:6px"></div>
+      </div>
+      <div class="panel-section" id="blocs-section">
+        <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between">
+          <span>🧩 Voter Blocs</span>
+          <span style="font-family:var(--font-mono);font-size:8px;color:var(--text3)">D↑ = Dem gain</span>
+        </div>
+        <div class="blocs-panel" id="blocs-list"></div>
+      </div>
+      <div class="panel-section">
+        <div class="panel-title">Campaign Finance</div>
+        <div style="display:flex;flex-direction:column;gap:5px">
+          <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:var(--text2)">Total Raised</span><span style="font-family:var(--font-mono);color:var(--green)" id="total-raised">$25M</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:var(--text2)">Total Spent</span><span style="font-family:var(--font-mono);color:var(--rep)" id="total-spent">$0M</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:var(--text2)">Cash on Hand</span><span style="font-family:var(--font-mono);color:var(--accent)" id="cash-on-hand">$25M</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CONVENTION ══ -->
+<div id="convention-screen" class="screen">
+  <div class="topbar">
+    <div class="topbar-logo">POTUS</div>
+    <div class="topbar-phase">Party Convention</div>
+    <button class="mute-btn" id="mute-btn-conv" onclick="toggleMute()" style="margin-left:auto">🔊</button>
+    <div class="phase-indicator"><div class="phase-step done">Primary ✓</div><div class="phase-step current">Convention</div><div class="phase-step">General</div></div>
+  </div>
+  <div class="convention-content" id="convention-content"></div>
+</div>
+
+<!-- ══ VP SELECTION ══ -->
+<div id="vp-screen" class="screen">
+  <div class="topbar">
+    <div class="topbar-logo">POTUS</div>
+    <div class="topbar-phase">Choose Running Mate</div>
+    <button class="mute-btn" id="mute-btn-vp" onclick="toggleMute()" style="margin-left:auto">🔊</button>
+    <div class="phase-indicator"><div class="phase-step done">Primary ✓</div><div class="phase-step done">Convention ✓</div><div class="phase-step current">General</div></div>
+  </div>
+  <div class="convention-content" id="vp-content"></div>
+</div>
+
+<!-- ══ ELECTION NIGHT ══ -->
+<div id="electionnight-screen" class="screen" style="position:relative">
+
+  <!-- ── BROADCAST NETWORK HEADER ── -->
+  <div class="en-network-bar">
+    <div class="en-network-logo-block">
+      <div class="en-network-name">POTUS</div>
+      <div class="en-network-tagline">Decision Desk</div>
+    </div>
+    <div class="en-live-badge">
+      <div class="en-live-dot-large"></div>
+      <div class="en-live-text">LIVE</div>
+    </div>
+    <div class="en-headline-block">
+      <div class="en-headline-title">Election Night Coverage — November 5, 2024</div>
+      <div class="en-headline-main" id="en-headline-main">Polls closing across Eastern time zone · Results incoming</div>
+    </div>
+    <div class="en-clock-block">
+      <div class="en-clock">EST <b id="en-clock-time">7:00 PM</b></div>
+      <div class="en-date-label">NOV 5, 2024</div>
+    </div>
+    <div style="display:flex;align-items:center;padding:0 12px;flex-shrink:0">
+      <button class="mute-btn" id="mute-btn-en" onclick="toggleMute()" style="background:#0d1117;border-color:#2a3348;color:#8a93a8">🔊</button>
+    </div>
+  </div>
+
+  <!-- ── ANCHOR COMMENTARY OVERLAY ── (positioned below header) -->
+  <!-- Anchor commentary: positioned bottom-left of map, above the news ticker -->
+  <div id="en-anchor-overlay" style="display:none;position:fixed;bottom:40px;left:16px;z-index:50;opacity:1;transition:opacity .4s;max-width:440px;pointer-events:none"></div>
+
+  <!-- ── SPEECH OVERLAY ── -->
+  <div id="en-speech-overlay" style="display:none;position:fixed;inset:0;z-index:200"></div>
+
+  <!-- ── CONGRESS SCOREBOARD BAR ── -->
+  <div class="en-congress-bar">
+    <div class="en-congress-label">Congress</div>
+    <!-- Senate -->
+    <div class="en-chamber">
+      <div class="en-chamber-title">SENATE</div>
+      <div class="en-chamber-dem" id="en-senate-dem">0</div>
+      <div class="en-chamber-bar" style="position:relative">
+        <div class="en-chamber-bar-dem" id="en-senate-bar-dem" style="width:0%"></div>
+        <div class="en-chamber-bar-rep" id="en-senate-bar-rep" style="width:0%"></div>
+        <!-- 50/50 centre line -->
+        <div style="position:absolute;left:50%;top:0;width:2px;height:100%;background:rgba(200,168,75,.9);z-index:2"></div>
+      </div>
+      <div class="en-chamber-rep" id="en-senate-rep">0</div>
+      <div class="en-chamber-need" style="color:#a78bfa">Need 51 · <span id="en-senate-called">0</span> races tonight</div>
+    </div>
+    <div class="en-chamber-divider"></div>
+    <!-- House -->
+    <div class="en-chamber">
+      <div class="en-chamber-title">HOUSE</div>
+      <div class="en-chamber-dem" id="en-house-dem">0</div>
+      <div class="en-chamber-bar" style="position:relative">
+        <div class="en-chamber-bar-dem" id="en-house-bar-dem" style="width:0%"></div>
+        <div class="en-chamber-bar-rep" id="en-house-bar-rep" style="width:0%"></div>
+        <!-- 50/50 centre line -->
+        <div style="position:absolute;left:50%;top:0;width:2px;height:100%;background:rgba(200,168,75,.9);z-index:2"></div>
+      </div>
+      <div class="en-chamber-rep" id="en-house-rep">0</div>
+      <div class="en-chamber-need" style="color:#a78bfa">Need 218 · <span id="en-house-called">0</span>/435</div>
+    </div>
+    <div style="margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:9px;color:#6b7280;text-align:right;min-width:120px" id="en-congress-status">Awaiting results...</div>
+  </div>
+
+  <div class="en-body">
+    <div class="en-map-area">
+      <!-- EV Counter -->
+      <div class="en-ev-counter">
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#3b82f6;letter-spacing:.15em;text-transform:uppercase" id="en-dem-name">Democratic</div>
+          <div class="en-ev-dem" id="en-ev-dem">0</div>
+        </div>
+        <div class="en-ev-mid">
+          <div class="en-ev-need">270 to win</div>
+          <div class="en-ev-dash">·</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:#4a5568" id="en-ev-remaining">538 remaining</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:#4a5568;margin-top:2px" id="en-states-called">0 D · 0 R · 51 to call</div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6b7280;margin-top:6px;line-height:1.6;text-align:center" id="en-pop-vote">Popular vote: —</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-start;gap:2px">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#ef4444;letter-spacing:.15em;text-transform:uppercase" id="en-rep-name">Republican</div>
+          <div class="en-ev-rep" id="en-ev-rep">0</div>
+        </div>
+        <div style="display:none;flex-direction:column;align-items:flex-start;gap:2px" id="en-third-wrap">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#a78bfa;letter-spacing:.15em;text-transform:uppercase" id="en-third-name">Third</div>
+          <div class="en-ev-rep" id="en-ev-third" style="color:#a78bfa">0</div>
+        </div>
+      </div>
+      <!-- Progress bars -->
+      <div style="position:relative;margin-top:-6px">
+        <div style="display:flex;justify-content:center;margin-bottom:3px">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:#c8a84b">270 ↓</div>
+        </div>
+        <div class="en-prog-bar">
+          <div class="en-prog-dem" id="en-prog-dem" style="width:0%"></div>
+          <div class="en-prog-rep" id="en-prog-rep" style="width:0%"></div>
+        </div>
+      </div>
+      <!-- Map -->
+      <div class="en-map-container">
+        <svg id="en-map" viewBox="0 0 960 600" xmlns="http://www.w3.org/2000/svg" style="display:block;width:100%"></svg>
+      </div>
+      <!-- Legend -->
+      <div style="display:flex;gap:12px;flex-wrap:wrap;padding:6px 8px;background:#0d1117;border-radius:6px;border:1px solid #1e2535">
+        <div class="legend-item"><div class="legend-dot" style="background:#1d4ed8"></div>Called D</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#991b1b"></div>Called R</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#6d28d9"></div>Too Close to Call</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#1e2535"></div>Not Yet Reporting</div>
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="en-sidebar">
+      <div style="padding:10px 14px;border-bottom:1px solid #1e2535;display:flex;flex-direction:column;gap:8px">
+        <!-- Early vote panel — shown at start -->
+        <div id="en-early-vote-panel" style="display:none"></div>
+        <button id="en-next-btn" onclick="callNextState()" style="display:none;align-items:center;justify-content:center;gap:8px;padding:11px 16px;background:linear-gradient(135deg,#c8a84b,#a07832);border:none;border-radius:6px;color:#0a0c10;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:.05em;transition:all .2s">
+          ▶ Call Next State
+        </button>
+        <button id="en-skip-btn" onclick="finishElectionNight()" style="display:none;padding:8px 16px;background:rgba(200,168,75,.08);border:1px solid #3a3020;border-radius:6px;color:#c8a84b;font-family:'IBM Plex Mono',monospace;font-size:10px;cursor:pointer;letter-spacing:.05em">
+          📊 View Full Results →
+        </button>
+      </div>
+      <div class="en-feed-header">
+        <div class="en-live-dot"></div>
+        Live Results Feed
+      </div>
+      <div class="en-feed" id="en-feed"></div>
+      <!-- Congress feed — separate from state calls -->
+      <div style="border-top:1px solid #1e2535;flex-shrink:0">
+        <div class="en-feed-header" style="background:#0a0d15">
+          <div class="en-live-dot" style="background:#a78bfa"></div>
+          Senate &amp; House Calls
+        </div>
+        <div id="en-congress-feed" style="display:flex;flex-direction:column;overflow:hidden;max-height:180px;padding:6px 0"></div>
+      </div>
+      <!-- Winner banner lives inside the sidebar so it never covers the buttons -->
+      <div class="en-winner-banner" id="en-winner-banner">
+        <div class="en-winner-title" id="en-winner-title"></div>
+        <div class="en-winner-sub" id="en-winner-sub"></div>
+        <div class="en-winner-ev" id="en-winner-ev"></div>
+        <!-- No button here — the main "Call Next State" button becomes "View Final Results" when all states are called -->
+      </div>
+    </div>
+  </div>
+
+  <!-- News ticker at very bottom -->
+  <div class="en-news-ticker" id="en-news-ticker" style="display:none">
+    <div style="flex-shrink:0;font-family:'IBM Plex Mono',monospace;font-size:10px;background:#c8a84b;color:#0a0c10;padding:0 12px;height:100%;display:flex;align-items:center;font-weight:700;letter-spacing:.1em;position:relative;z-index:999">BREAKING</div>
+    <div class="en-ticker-inner" id="en-ticker-inner" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#e8ecf4;padding:0 24px"></div>
+  </div>
+
+</div>
+
+<!-- ══ POST-ELECTION BREAKDOWN ══ -->
+<div id="breakdown-screen" class="screen">
+  <div class="bk-title" id="bk-result-title">Election Night Breakdown</div>
+  <div class="bk-subtitle" id="bk-result-sub">2024 Presidential Election · Post-Mortem Analysis</div>
+  <div class="bk-grid" id="bk-grid"></div>
+  <div class="bk-cta">
+    <button class="bk-btn primary" onclick="proceedToEndScreen()">View Final Results →</button>
+  </div>
+</div>
+
+<!-- ══ FIRST 100 DAYS ══ -->
+<div id="first100-screen" class="screen">
+  <div class="en-network-bar">
+    <div class="en-network-logo-block">
+      <div class="en-network-name">P100</div>
+      <div class="en-network-tagline">First 100 Days</div>
+    </div>
+    <div class="en-live-badge">
+      <div class="en-live-dot-large"></div>
+      <div id="p100-day-badge" style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:#ef4444;letter-spacing:.15em">DAY 1 OF 100</div>
+    </div>
+    <div class="en-headline-block">
+      <div class="en-headline-title">ADMINISTRATION BRIEFING</div>
+      <div class="en-headline-main" id="p100-headline-main">THE FIRST 100 DAYS</div>
+    </div>
+    <div style="display:flex;align-items:center;padding:0 14px;border-right:1px solid #1e2535;flex-shrink:0">
+      <div id="p100-phase-badge" style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:#c8a84b;letter-spacing:.15em;padding:2px 8px;border:1px solid rgba(200,168,75,.3);border-radius:3px">🏛 TRANSITION PHASE</div>
+    </div>
+    <div class="en-clock-block">
+      <div class="en-clock" id="p100-clock">00:00:00</div>
+      <div class="en-date-label">WHITE HOUSE</div>
+    </div>
+  </div>
+  <div class="p100-milestone-bar" id="p100-milestone-bar"></div>
+  <div class="p100-body">
+    <div class="p100-main" id="p100-event-area">
+      <div class="p100-event-placeholder">
+        <div class="p100-event-ph-icon">📋</div>
+        <div class="p100-event-ph-title">Preparing your first briefing…</div>
+      </div>
+    </div>
+    <div class="p100-sidebar">
+      <div class="p100-sidebar-section">
+        <div id="p100-approval-gauge">
+          <div class="p100-gauge-label">APPROVAL RATING</div>
+          <div class="p100-gauge-num" style="color:#c8a84b">—</div>
+        </div>
+      </div>
+      <div class="p100-sidebar-section">
+        <div class="p100-panel-title">POLICY PERFORMANCE</div>
+        <div id="p100-stat-bars"></div>
+      </div>
+      <div class="p100-sidebar-section">
+        <div id="p100-congress-panel"></div>
+      </div>
+      <div class="p100-sidebar-section">
+        <div id="p100-cabinet-panel"></div>
+      </div>
+    </div>
+  </div>
+  <div id="p100-news-ticker" style="display:none;position:relative;height:32px;background:#0a0c10;border-top:1px solid #1e2535;align-items:center;overflow:hidden;flex-shrink:0">
+    <div id="p100-ticker-label" style="flex-shrink:0;font-family:'IBM Plex Mono',monospace;font-size:10px;background:#c8a84b;color:#0a0c10;padding:0 12px;height:100%;display:flex;align-items:center;font-weight:700;letter-spacing:.1em">BRIEFING</div>
+    <div id="p100-ticker-inner" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#e8ecf4;padding:0 24px;white-space:nowrap;animation:ticker 40s linear infinite"></div>
+  </div>
+</div>
+
+<!-- ══ END ══ -->
+<div id="end-screen" class="screen">
+  <div class="end-title" id="end-title"></div>
+  <div id="end-message" style="font-size:14px;color:var(--text2);margin-bottom:8px;max-width:480px;line-height:1.7"></div>
+  <div class="end-stats" id="end-stats"></div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:4px">
+    <button class="play-again-btn" onclick="location.reload()">Play Again</button>
+    <button id="end-share-btn" onclick="shareResult()" style="padding:13px 24px;background:transparent;border:2px solid var(--border2);border-radius:var(--radius);color:var(--text2);font-family:var(--font-display);font-size:16px;font-weight:700;cursor:pointer;transition:all .2s" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--text2)'">📋 Copy Result</button>
+  </div>
+  <div id="end-share-confirm" style="display:none;font-family:var(--font-mono);font-size:11px;color:var(--green);margin-top:8px">✓ Copied to clipboard!</div>
+</div>
+
+<!-- ══ MODALS ══ -->
+<!-- Policy Platform Modal -->
+<div class="modal-overlay" id="policy-modal">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header"><div class="modal-title">🧾 Policy Platform</div><button class="modal-close" onclick="closeModal('policy-modal')">×</button></div>
+    <div class="modal-body">
+      <p style="font-size:12px;color:var(--text2);margin-bottom:14px">Changing a stance mid-campaign costs political capital and affects your favorability.</p>
+      <div id="policy-modal-content"></div>
+      <div class="policy-preview" id="policy-modal-preview" style="margin-top:10px">Hover a stance to preview its effects.</div>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-btn secondary" onclick="closeModal('policy-modal')">Close</button>
+      <button class="modal-btn primary" onclick="applyPolicyChange()">Apply Changes (−$3M)</button>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="state-modal">
+  <div class="modal">
+    <div class="modal-header"><div><div class="modal-title" id="state-modal-name"></div><div style="font-family:var(--font-mono);font-size:10px;color:var(--text2);margin-top:3px" id="state-modal-sub"></div></div><button class="modal-close" onclick="closeModal('state-modal')">×</button></div>
+    <div class="modal-body" id="state-modal-body"></div>
+    <div class="modal-footer"><button class="modal-btn secondary" onclick="closeModal('state-modal')">Close</button><button class="modal-btn primary" id="state-modal-target-btn">🎯 Target This State</button></div>
+  </div>
+</div>
+<div class="modal-overlay" id="summary-modal">
+  <div class="modal">
+    <div class="modal-header"><div><div class="modal-title" id="summary-title">Week Summary</div><div style="font-size:11px;color:var(--text2);margin-top:3px" id="summary-subtitle"></div></div></div>
+    <div class="modal-body"><div class="week-summary" id="summary-events"></div></div>
+    <div class="modal-footer"><button class="modal-btn primary">Continue →</button></div>
+  </div>
+</div>
+
+<!-- Negotiate Modal — only triggered when a candidate drops out -->
+<div class="modal-overlay" id="negotiate-modal">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="neg-title">📞 Incoming Call</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:3px"><span id="neg-cand"></span> has dropped out with <strong id="neg-delegates" style="color:var(--accent)"></strong> delegates — they're on the line.</div>
+      </div>
+    </div>
+    <div class="modal-body">
+      <div style="padding:12px;background:var(--bg3);border-radius:6px;border:1px solid var(--border);margin-bottom:14px;font-size:12px;color:var(--text2);line-height:1.6">
+        <div id="neg-ideo-note" style="margin-bottom:5px"></div>
+        Their natural lean is toward <strong id="neg-natural" style="color:var(--text)"></strong>. Mention a VP offer, cabinet role, or party unity to move the needle.
+      </div>
+      <div style="margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
+        <div style="font-family:var(--font-mono);font-size:9px;color:var(--text3)">Base success odds</div>
+        <div style="font-family:var(--font-mono);font-size:18px;font-weight:700" id="neg-odds">50%</div>
+      </div>
+      <label style="font-family:var(--font-mono);font-size:9px;color:var(--text3);letter-spacing:.12em;text-transform:uppercase;display:block;margin-bottom:7px">What do you say on the call?</label>
+      <textarea id="neg-call-input" rows="4"
+        placeholder="Type what you say… e.g. 'I want you as my running mate — together we can win this for the party.'"
+        style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:'IBM Plex Sans',sans-serif;font-size:13px;padding:10px 12px;resize:none;line-height:1.6;outline:none;box-sizing:border-box;transition:border-color .2s"
+        onfocus="this.style.borderColor='var(--accent)'"
+        onblur="this.style.borderColor='var(--border)'"
+        onkeydown="if(event.ctrlKey&&event.key==='Enter'){event.preventDefault();submitNegotiateCall()}"></textarea>
+      <div style="font-family:var(--font-mono);font-size:9px;color:var(--text3);margin-top:5px">
+        Ctrl+Enter to submit · Keywords: <em>VP / running mate</em> (+35%) · <em>cabinet / secretary / appoint</em> (+20%) · general appeal (base)
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-btn secondary" onclick="submitNegotiateCall('nothing')">📵 Don't Call Back</button>
+      <button class="modal-btn primary" onclick="submitNegotiateCall()">📞 Make the Call →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Negotiate Result Modal -->
+<div class="modal-overlay" id="neg-result-modal">
+  <div class="modal" style="max-width:420px" id="neg-result-inner">
+    <div class="modal-header"><div class="modal-title" id="neg-result-title"></div></div>
+    <div class="modal-body"><p id="neg-result-msg" style="font-size:13px;line-height:1.6;color:var(--text2)"></p></div>
+    <div class="modal-footer"><button class="modal-btn primary" onclick="closeNegResult()">Continue →</button></div>
+  </div>
+</div>
+
+<!-- CNN-style State Call Popup -->
+<div id="en-state-popup" class="en-state-popup"></div>
+
+<!-- Minigame Modal -->
+<div class="modal-overlay" id="minigame-modal" onclick="if(event.target===this)closeMG(0)">
+  <div class="modal" style="max-width:560px;padding:0;overflow:hidden;position:relative">
+    <!-- Close button — always shown as a cancel escape hatch -->
+    <button id="minigame-close-btn" onclick="closeMG(0)" style="
+      display:flex;position:absolute;top:10px;right:10px;z-index:10;
+      width:30px;height:30px;border-radius:50%;
+      background:rgba(10,12,20,.85);border:1px solid rgba(200,168,75,.35);
+      color:#c8a84b;font-size:16px;line-height:1;cursor:pointer;
+      align-items:center;justify-content:center;
+      font-family:'IBM Plex Mono',monospace;font-weight:700;
+      transition:all .2s;backdrop-filter:blur(4px);"
+      onmouseover="this.style.background='rgba(200,168,75,.2)';this.style.borderColor='#c8a84b'"
+      onmouseout="this.style.background='rgba(10,12,20,.85)';this.style.borderColor='rgba(200,168,75,.35)'"
+      title="Cancel (skip minigame)">✕</button>
+    <div id="minigame-inner"></div>
+  </div>
+</div>
+
+<script src="game-data.js"></script>
+<script src="game-night.js"></script>
+<script src="game-tour.js"></script>
+<script src="game.js"></script>
+<script>
+// ── DEBUG OVERLAY — catches all JS errors and shows them on-screen ──
+// Only active in dev mode. Append ?dev to the URL to enable, e.g. index.html?dev
+(function(){
+  var DEV_MODE = /[?&]dev(&|$)/.test(location.search) || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+  if(!DEV_MODE) return;
+  var overlay = null;
+  function getOverlay(){
+    if(!overlay){
+      overlay = document.createElement('div');
+      overlay.style.cssText = 'position:fixed;bottom:0;left:0;right:0;max-height:40vh;overflow-y:auto;background:rgba(0,0,0,.92);color:#f87171;font-family:monospace;font-size:11px;padding:8px 12px;z-index:99999;border-top:2px solid #ef4444;white-space:pre-wrap;word-break:break-all';
+      overlay.innerHTML = '<b style="color:#fbbf24">⚠ JS ERROR LOG (debug mode)</b>\n';
+      document.body.appendChild(overlay);
+    }
+    return overlay;
+  }
+  function log(msg){
+    var o = getOverlay();
+    o.innerHTML += msg + '\n';
+    o.scrollTop = o.scrollHeight;
+    console.error('[DBG]', msg);
+  }
+  window.addEventListener('error', function(e){
+    log('ERROR: ' + e.message + '\n  at ' + e.filename + ':' + e.lineno + ':' + e.colno);
+  });
+  window.addEventListener('unhandledrejection', function(e){
+    log('UNHANDLED PROMISE: ' + (e.reason && e.reason.message ? e.reason.message : e.reason));
+  });
+  // Wrap nextWeek to catch errors
+  window.addEventListener('load', function(){
+    var _orig = window.nextWeek;
+    if(typeof _orig === 'function'){
+      window.nextWeek = function(){
+        log('nextWeek() called — week=' + (window.GS&&window.GS.week) + ' phase=' + (window.GS&&window.GS.phase));
+        try { return _orig.apply(this, arguments); }
+        catch(e){ log('nextWeek THREW: ' + e.message + '\n' + (e.stack||'').split('\n').slice(0,6).join('\n')); }
+      };
+      log('nextWeek wrapped OK');
+    } else {
+      log('ERROR: nextWeek is not defined at load time!');
+    }
+    // Also wrap renderAll and renderEV
+    ['renderAll','renderEV','renderWinProbability','passiveDecay','opponentPassiveFundraise','runAI','showSummary'].forEach(function(name){
+      var fn = window[name];
+      if(typeof fn === 'function'){
+        window[name] = function(){
+          try { return fn.apply(this, arguments); }
+          catch(e){ log(name + ' THREW: ' + e.message + '\n' + (e.stack||'').split('\n').slice(0,4).join('\n')); throw e; }
+        };
+      }
+    });
+    log('Debug wrappers installed. Click End Week to test.');
+  });
+})();
+</script>
+<script src="game-historical.js"></script>
+<script>
+window.POTUS_AI_MODE='groq';window.POTUS_CUSTOM_KEY='';
+function selectCampaignMode(mode,btn){
+  window.POTUS_AI_MODE=mode;
+  document.querySelectorAll('#campaign-mode-toggle .diff-btn').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  document.getElementById('custom-key-row').style.display=mode==='custom'?'block':'none';
+  document.getElementById('groq-free-note').style.display=mode==='groq'?'block':'none';
+}
+setTimeout(function(){
+  if(typeof window.startGame==='function'&&!window._modeHooked){
+    window._modeHooked=true;
+    const _o=window.startGame;
+    window.startGame=function(){
+      window.POTUS_CUSTOM_KEY=(document.getElementById('custom-api-key')?.value||'').trim();
+      _o.apply(this,arguments);
+    };
+  }
+},0);
+
+// Show F11 hint on non-touch desktop only
+(function(){
+  var isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+  var isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+  if(!isTouch && !isMobile){
+    var h = document.getElementById('f11-hint');
+    if(h) h.style.display = 'block';
+  }
+})();
+</script>
+<script src="ai-command.js"></script>
+<script src="game-first100.js"></script>
+<!-- ══ SETTINGS MODAL ══ -->
+<div class="modal-overlay" id="settings-modal">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header">
+      <div class="modal-title">⚙ UI Settings</div>
+      <button class="modal-close" onclick="closeModal('settings-modal')">×</button>
+    </div>
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:20px">
+      <div>
+        <div style="font-family:var(--font-mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.15em;margin-bottom:12px">🖥 UI Scale</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px" id="ui-scale-grid">
+          <button class="ui-scale-btn" data-scale="0.72" onclick="setUIScale(0.72,this)">Mobile</button>
+          <button class="ui-scale-btn" data-scale="0.88" onclick="setUIScale(0.88,this)">Tablet</button>
+          <button class="ui-scale-btn active" data-scale="1" onclick="setUIScale(1,this)">Desktop</button>
+          <button class="ui-scale-btn" data-scale="1.12" onclick="setUIScale(1.12,this)">Large</button>
+        </div>
+        <div style="font-size:11px;color:var(--text3);margin-top:8px;font-family:var(--font-mono)">Affects text size across all panels. Saved automatically.</div>
+      </div>
+      <div style="padding:12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px">
+        <div style="font-family:var(--font-mono);font-size:10px;color:var(--accent);text-transform:uppercase;letter-spacing:.15em;margin-bottom:8px">🧭 Political Compass</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.7">
+          Hover over the compass in-game to see axis explanations. Your <span style="color:var(--accent)">gold dot</span> shifts based on your weekly policy choices.
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-btn secondary" onclick="closeModal('settings-modal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     🎬 TOUR MODE SCREEN — Cinematic Product Demo (fully self-contained)
+     ══════════════════════════════════════════════════════════════ -->
+<div id="tour-screen" class="screen">
+  <div id="ts-progress"><div id="ts-progress-fill"></div></div>
+  <div id="ts-chapter"></div>
+  <button id="ts-exit-btn" onclick="exitTourMode()">✕ Exit Tour</button>
+
+  <!-- ── SCENE 1: OPENING ── -->
+  <div class="ts-scene" id="ts-s1">
+    <div style="position:absolute;inset:0;overflow:hidden">
+      <svg id="ts-map-s1" viewBox="0 0 960 600" style="position:absolute;inset:0;width:100%;height:100%;opacity:.55"></svg>
+      <div style="position:absolute;inset:0;background:linear-gradient(to top,#070a0f 12%,transparent 55%,rgba(7,10,15,.4) 100%)"></div>
+    </div>
+    <div style="position:relative;z-index:2;text-align:center;padding:0 24px">
+      <div class="ts-eyebrow" id="ts-s1-ey">Presidential Election Simulator</div>
+      <h1 class="ts-headline" id="ts-s1-h1" style="font-size:clamp(32px,6vw,72px);max-width:800px">Win the Primary.<br>Survive the Convention.<br>Capture 270.</h1>
+      <div class="ts-sub" id="ts-s1-sub">Every decision shifts the race. Every voter matters.</div>
+    </div>
+  </div>
+
+  <!-- ── SCENE 2: CAMPAIGN LOOP ── -->
+  <div class="ts-scene" id="ts-s2">
+    <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 40%,rgba(59,130,246,.04) 0%,transparent 65%)"></div>
+    <div style="position:relative;width:min(1000px,96vw);display:grid;grid-template-columns:220px 1fr 180px;gap:10px;height:520px">
+      <!-- Left: actions -->
+      <div class="ts-panel" style="display:flex;flex-direction:column;overflow:hidden">
+        <div class="ts-panel-title">Weekly Action <span style="color:var(--text3);font-size:8px">(pick 1)</span></div>
+        <div style="padding:8px;flex:1;display:flex;flex-direction:column;gap:5px" id="ts-s2-actions">
+          <div class="ts-action-card" id="ts-s2-act-rally">📢 <b>Rally in Michigan</b><div style="font-size:9px;color:var(--text2);margin-top:2px">Ground game push in key battleground</div><div style="font-family:var(--font-mono);font-size:9px;color:var(--accent);margin-top:3px">−$2M</div></div>
+          <div class="ts-action-card">📺 <b>Media Tour</b><div style="font-size:9px;color:var(--text2);margin-top:2px">Earn coverage on national networks</div><div style="font-family:var(--font-mono);font-size:9px;color:var(--accent);margin-top:3px">−$1M</div></div>
+          <div class="ts-action-card">🤝 <b>Coalition Outreach</b><div style="font-size:9px;color:var(--text2);margin-top:2px">Mobilise union &amp; suburban voters</div><div style="font-family:var(--font-mono);font-size:9px;color:var(--accent);margin-top:3px">−$1.5M</div></div>
+          <div class="ts-action-card">💰 <b>Fundraise</b><div style="font-size:9px;color:var(--text2);margin-top:2px">Replenish campaign war chest</div><div style="font-family:var(--font-mono);font-size:9px;color:var(--accent);margin-top:3px">Free</div></div>
+          <div class="ts-action-card">🔥 <b>Attack Ad</b><div style="font-size:9px;color:var(--text2);margin-top:2px">Contrast ad targeting opponent record</div><div style="font-family:var(--font-mono);font-size:9px;color:var(--accent);margin-top:3px">−$3M</div></div>
+        </div>
+        <div style="padding:8px;margin-top:auto">
+          <div style="padding:8px;background:rgba(200,168,75,.1);border:1px solid rgba(200,168,75,.25);border-radius:6px;font-family:var(--font-mono);font-size:9px;color:var(--accent);display:flex;gap:8px;align-items:center">
+            <span>💰</span><span id="ts-s2-funds">$38M</span>
+            <span style="margin-left:auto;color:#4ade80" id="ts-s2-mom">⬆ +6.5</span>
+          </div>
+        </div>
+      </div>
+      <!-- Center: map -->
+      <div class="ts-panel" style="position:relative;overflow:hidden">
+        <div style="padding:9px 13px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+          <div style="font-family:var(--font-display);font-size:14px;font-weight:700">Primary Map — Week 8</div>
+          <div style="font-family:var(--font-mono);font-size:9px;color:var(--text2)">You leading: <span style="color:var(--accent)">23 states</span></div>
+        </div>
+        <svg id="ts-map-s2" viewBox="0 0 960 600" style="display:block;width:100%;flex:1"></svg>
+        <div style="position:absolute;bottom:0;left:0;right:0;padding:8px 12px;background:rgba(7,10,15,.9);border-top:1px solid var(--border);display:flex;gap:12px;align-items:center">
+          <div style="display:flex;align-items:center;gap:5px"><div style="width:10px;height:10px;background:#c8a84b;border-radius:2px"></div><span style="font-size:10px;color:var(--text2)">You leading</span></div>
+          <div style="display:flex;align-items:center;gap:5px"><div style="width:10px;height:10px;background:#22d3ee;border-radius:2px"></div><span style="font-size:10px;color:var(--text2)">Hawkins</span></div>
+          <div style="display:flex;align-items:center;gap:5px"><div style="width:10px;height:10px;background:#f472b6;border-radius:2px"></div><span style="font-size:10px;color:var(--text2)">Chen</span></div>
+          <div style="margin-left:auto;font-family:var(--font-mono);font-size:9px;color:var(--text3)" id="ts-s2-stateaction"></div>
+        </div>
+      </div>
+      <!-- Right: stats -->
+      <div class="ts-panel" style="display:flex;flex-direction:column;overflow:hidden">
+        <div class="ts-panel-title">Candidate Stats</div>
+        <div style="padding:10px;display:flex;flex-direction:column;gap:7px">
+          <div style="font-family:var(--font-display);font-size:16px;font-weight:700">Alex Morgan</div>
+          <div style="font-family:var(--font-mono);font-size:9px;color:var(--dem)">Democratic · Senator</div>
+          <div style="height:1px;background:var(--border);margin:4px 0"></div>
+          <div class="ts-statrow" data-val="57"><span style="font-size:10px;color:var(--text2)">Favorability</span><span style="font-family:var(--font-mono);font-size:10px;color:var(--text)" id="ts-fav-lbl">57%</span></div>
+          <div style="height:4px;background:var(--bg3);border-radius:2px;overflow:hidden;margin-bottom:4px"><div class="ts-bar-fill" style="background:var(--accent);--tw:57%;"></div></div>
+          <div class="ts-statrow" data-val="68"><span style="font-size:10px;color:var(--text2)">Electability</span><span style="font-family:var(--font-mono);font-size:10px;color:var(--text)">68%</span></div>
+          <div style="height:4px;background:var(--bg3);border-radius:2px;overflow:hidden;margin-bottom:4px"><div class="ts-bar-fill" style="background:var(--dem);--tw:68%"></div></div>
+          <div class="ts-statrow" data-val="52"><span style="font-size:10px;color:var(--text2)">Ground Game</span><span style="font-family:var(--font-mono);font-size:10px;color:var(--text)">52%</span></div>
+          <div style="height:4px;background:var(--bg3);border-radius:2px;overflow:hidden;margin-bottom:4px"><div class="ts-bar-fill" style="background:var(--green);--tw:52%"></div></div>
+          <div class="ts-statrow" data-val="61"><span style="font-size:10px;color:var(--text2)">Media</span><span style="font-family:var(--font-mono);font-size:10px;color:var(--text)">61%</span></div>
+          <div style="height:4px;background:var(--bg3);border-radius:2px;overflow:hidden;margin-bottom:4px"><div class="ts-bar-fill" style="background:var(--swing);--tw:61%"></div></div>
+          <div style="height:1px;background:var(--border);margin:4px 0"></div>
+          <div style="font-family:var(--font-mono);font-size:9px;color:var(--accent)">312 delegates</div>
+          <div style="font-family:var(--font-mono);font-size:8px;color:var(--text3)">Need 1,991 to clinch</div>
+        </div>
+      </div>
+    </div>
+    <div style="position:absolute;bottom:24px;left:50%;transform:translateX(-50%);text-align:center">
+      <div class="ts-eyebrow" id="ts-s2-ey">Campaign Management</div>
+      <div class="ts-headline" id="ts-s2-h1" style="font-size:clamp(20px,3vw,38px)">Every decision shifts the race.</div>
+    </div>
+    <!-- Fake cursor -->
+    <div id="ts-cursor" style="position:absolute;pointer-events:none;z-index:20;display:none;transition:left .7s cubic-bezier(.4,0,.2,1),top .7s cubic-bezier(.4,0,.2,1)">
+      <svg width="20" height="20" viewBox="0 0 20 20"><path d="M2,2 L2,16 L6,12 L9,19 L11,18 L8,11 L14,11 Z" fill="white" stroke="rgba(0,0,0,.6)" stroke-width="0.8"/></svg>
+    </div>
+  </div>
+
+  <!-- ── SCENE 3: POLITICAL COMPASS ── -->
+  <div class="ts-scene" id="ts-s3">
+    <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,rgba(167,139,250,.05) 0%,transparent 65%)"></div>
+    <div style="position:relative;display:flex;flex-direction:column;align-items:center;gap:24px">
+      <div style="text-align:center">
+        <div class="ts-eyebrow" id="ts-s3-ey">Policy Platform</div>
+        <div class="ts-headline" id="ts-s3-h1">Your platform defines your coalition.</div>
+      </div>
+      <div style="display:flex;gap:40px;align-items:center;flex-wrap:wrap;justify-content:center">
+        <!-- Compass -->
+        <div style="position:relative">
+          <div style="width:240px;height:240px;border:1px solid var(--border2);border-radius:10px;background:var(--bg2);overflow:hidden;position:relative">
+            <svg id="ts-compass-svg" viewBox="0 0 100 100" style="width:100%;height:100%;position:absolute;inset:0"></svg>
+          </div>
+          <div style="text-align:center;margin-top:8px;font-family:var(--font-mono);font-size:11px;color:var(--accent)" id="ts-compass-label">Progressive Left</div>
+        </div>
+        <!-- Policy list -->
+        <div style="display:flex;flex-direction:column;gap:10px;min-width:240px">
+          <div class="ts-policy-row" id="ts-pol-econ"><div style="font-family:var(--font-mono);font-size:9px;color:var(--text3);letter-spacing:.1em;margin-bottom:3px">💵 ECONOMY</div><div id="ts-pol-econ-val" style="font-size:13px;font-weight:600;color:#60a5fa">Progressive</div></div>
+          <div class="ts-policy-row" id="ts-pol-health"><div style="font-family:var(--font-mono);font-size:9px;color:var(--text3);letter-spacing:.1em;margin-bottom:3px">🏥 HEALTHCARE</div><div id="ts-pol-health-val" style="font-size:13px;font-weight:600;color:#22c55e">Public Option</div></div>
+          <div class="ts-policy-row" id="ts-pol-fp"><div style="font-family:var(--font-mono);font-size:9px;color:var(--text3);letter-spacing:.1em;margin-bottom:3px">🌍 FOREIGN POLICY</div><div id="ts-pol-fp-val" style="font-size:13px;font-weight:600;color:#a78bfa">Diplomatic</div></div>
+          <div class="ts-policy-row" id="ts-pol-imm"><div style="font-family:var(--font-mono);font-size:9px;color:var(--text3);letter-spacing:.1em;margin-bottom:3px">🛂 IMMIGRATION</div><div id="ts-pol-imm-val" style="font-size:13px;font-weight:600;color:#fb923c">Reform</div></div>
+          <div class="ts-policy-row" id="ts-pol-cli"><div style="font-family:var(--font-mono);font-size:9px;color:var(--text3);letter-spacing:.1em;margin-bottom:3px">🌿 CLIMATE</div><div id="ts-pol-cli-val" style="font-size:13px;font-weight:600;color:#4ade80">Aggressive Action</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SCENE 4: VOTER BLOCS ── -->
+  <div class="ts-scene" id="ts-s4">
+    <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 30% 60%,rgba(34,197,94,.04) 0%,transparent 60%)"></div>
+    <div style="position:relative;display:flex;flex-direction:column;align-items:center;gap:28px">
+      <div style="text-align:center">
+        <div class="ts-eyebrow" id="ts-s4-ey">Coalition Building</div>
+        <div class="ts-headline" id="ts-s4-h1">Win blocs. Lose others. Balance matters.</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;width:min(680px,92vw)">
+        <div class="ts-panel ts-enter" style="padding:14px;animation-delay:.1s">
+          <div style="font-family:var(--font-mono);font-size:9px;color:var(--text3);letter-spacing:.15em;margin-bottom:12px">🧩 VOTER COALITION TRACKER</div>
+          <div id="ts-bloc-rows" style="display:flex;flex-direction:column;gap:9px"></div>
+        </div>
+        <div class="ts-panel ts-enter" style="padding:14px;animation-delay:.25s">
+          <div style="font-family:var(--font-mono);font-size:9px;color:var(--text3);letter-spacing:.15em;margin-bottom:12px">📊 NATIONAL POLL TRACKER</div>
+          <div style="display:flex;flex-direction:column;gap:9px">
+            <div style="font-size:11px;color:var(--text2);margin-bottom:3px">Primary — Week 8</div>
+            <div style="display:flex;align-items:center;gap:8px"><div style="width:60px;font-size:11px;color:var(--text2);white-space:nowrap">A. Morgan</div><div style="flex:1;height:18px;background:var(--bg3);border-radius:3px;overflow:hidden"><div style="height:100%;background:var(--dem);width:0%;transition:width 1.1s .4s ease;display:flex;align-items:center;padding:0 6px" id="ts-poll-p">38%</div></div></div>
+            <div style="display:flex;align-items:center;gap:8px"><div style="width:60px;font-size:11px;color:var(--text2);white-space:nowrap">Hawkins</div><div style="flex:1;height:18px;background:var(--bg3);border-radius:3px;overflow:hidden"><div style="height:100%;background:#22d3ee;width:0%;transition:width 1.1s .6s ease;display:flex;align-items:center;padding:0 6px" id="ts-poll-h">24%</div></div></div>
+            <div style="display:flex;align-items:center;gap:8px"><div style="width:60px;font-size:11px;color:var(--text2);white-space:nowrap">Chen</div><div style="flex:1;height:18px;background:var(--bg3);border-radius:3px;overflow:hidden"><div style="height:100%;background:#f472b6;width:0%;transition:width 1.1s .75s ease;display:flex;align-items:center;padding:0 6px" id="ts-poll-c">19%</div></div></div>
+            <div style="display:flex;align-items:center;gap:8px"><div style="width:60px;font-size:11px;color:var(--text2);white-space:nowrap">Torres</div><div style="flex:1;height:18px;background:var(--bg3);border-radius:3px;overflow:hidden"><div style="height:100%;background:#84cc16;width:0%;transition:width 1.1s .9s ease;display:flex;align-items:center;padding:0 6px" id="ts-poll-t">12%</div></div></div>
+            <div style="display:flex;align-items:center;gap:8px"><div style="width:60px;font-size:11px;color:var(--text2);white-space:nowrap">Park</div><div style="flex:1;height:18px;background:var(--bg3);border-radius:3px;overflow:hidden"><div style="height:100%;background:#f97316;width:0%;transition:width 1.1s 1.05s ease;display:flex;align-items:center;padding:0 6px" id="ts-poll-pk">7%</div></div></div>
+          </div>
+          <div style="margin-top:12px;padding:8px 10px;background:rgba(200,168,75,.06);border:1px solid rgba(200,168,75,.2);border-radius:6px;font-family:var(--font-mono);font-size:9px;color:var(--accent)">📈 Win probability: 72% chance of nomination</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SCENE 5: AI OPPONENTS ── -->
+  <div class="ts-scene" id="ts-s5">
+    <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 70% 40%,rgba(239,68,68,.04) 0%,transparent 60%)"></div>
+    <div style="position:relative;display:flex;flex-direction:column;align-items:center;gap:24px">
+      <div style="text-align:center">
+        <div class="ts-eyebrow" id="ts-s5-ey">AI Competition</div>
+        <div class="ts-headline" id="ts-s5-h1">Dynamic AI adapts to the race.</div>
+      </div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;justify-content:center;width:min(820px,96vw)">
+        <!-- AI Card 1 -->
+        <div class="ts-panel ts-enter" style="width:260px;padding:13px;animation-delay:.1s">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+            <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#22d3ee44,#22d3ee22);border:1.5px solid #22d3ee66;display:flex;align-items:center;justify-content:center;font-size:16px">🏛</div>
+            <div><div style="font-weight:700;font-size:12px">Sen. T. Hawkins</div><div style="font-family:var(--font-mono);font-size:8px;color:#22d3ee">🧑‍⚖️ Moderate · Active</div></div>
+            <div style="margin-left:auto;font-family:var(--font-mono);font-size:11px;font-weight:700;color:#22d3ee" id="ts-ai1-pct">24%</div>
+          </div>
+          <div style="height:3px;background:var(--bg3);border-radius:2px;overflow:hidden;margin-bottom:10px"><div style="height:100%;background:#22d3ee;width:24%;transition:width .6s"></div></div>
+          <div style="font-family:var(--font-mono);font-size:8px;color:var(--text3);letter-spacing:.1em;margin-bottom:5px">RECENT ACTIONS</div>
+          <div id="ts-ai1-log" style="display:flex;flex-direction:column;gap:3px"></div>
+        </div>
+        <!-- AI Card 2 -->
+        <div class="ts-panel ts-enter" style="width:260px;padding:13px;animation-delay:.22s">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+            <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#f472b644,#f472b622);border:1.5px solid #f472b666;display:flex;align-items:center;justify-content:center;font-size:16px">⚖️</div>
+            <div><div style="font-weight:700;font-size:12px">Gov. M. Chen</div><div style="font-family:var(--font-mono);font-size:8px;color:#f472b6">🌊 Progressive · Active</div></div>
+            <div style="margin-left:auto;font-family:var(--font-mono);font-size:11px;font-weight:700;color:#f472b6" id="ts-ai2-pct">19%</div>
+          </div>
+          <div style="height:3px;background:var(--bg3);border-radius:2px;overflow:hidden;margin-bottom:10px"><div style="height:100%;background:#f472b6;width:19%;transition:width .6s"></div></div>
+          <div style="font-family:var(--font-mono);font-size:8px;color:var(--text3);letter-spacing:.1em;margin-bottom:5px">RECENT ACTIONS</div>
+          <div id="ts-ai2-log" style="display:flex;flex-direction:column;gap:3px"></div>
+        </div>
+        <!-- News feed -->
+        <div class="ts-panel ts-enter" style="width:260px;padding:13px;animation-delay:.35s">
+          <div style="font-family:var(--font-mono);font-size:8px;color:var(--text3);letter-spacing:.1em;margin-bottom:8px">📰 LIVE NEWS FEED</div>
+          <div id="ts-news-feed" style="display:flex;flex-direction:column;gap:6px"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SCENE 6: DEBATE ── -->
+  <div class="ts-scene" id="ts-s6">
+    <div style="position:absolute;inset:0;background:linear-gradient(135deg,rgba(167,139,250,.08) 0%,rgba(200,168,75,.04) 100%)"></div>
+    <div style="position:relative;display:flex;flex-direction:column;align-items:center;gap:28px;width:min(720px,94vw);text-align:center">
+      <div class="ts-eyebrow" id="ts-s6-ey">Prime Time</div>
+      <div class="ts-headline" id="ts-s6-h1">Debates can change everything.</div>
+      <!-- Debate card -->
+      <div class="ts-panel ts-enter" style="width:100%;padding:0;overflow:hidden">
+        <div style="background:linear-gradient(135deg,rgba(167,139,250,.15),rgba(200,168,75,.08));padding:16px 20px;border-bottom:1px solid rgba(167,139,250,.25);display:flex;align-items:center;gap:12px">
+          <div style="width:10px;height:10px;border-radius:50%;background:#ef4444;animation:tsFlicker .8s ease-in-out infinite"></div>
+          <div style="font-family:var(--font-mono);font-size:11px;color:#a78bfa;letter-spacing:.15em">📺 DEBATE — LIVE NOW</div>
+          <div style="margin-left:auto;font-family:var(--font-mono);font-size:10px;color:var(--text3)">National Broadcast · 47M Watching</div>
+        </div>
+        <div style="padding:20px;display:flex;gap:20px;align-items:stretch">
+          <div style="flex:1;text-align:center;padding:16px;background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.2);border-radius:8px">
+            <div style="font-size:28px;margin-bottom:6px">🔵</div>
+            <div style="font-weight:700;font-size:14px">Alex Morgan</div>
+            <div style="font-family:var(--font-mono);font-size:9px;color:var(--dem);margin-top:3px">Democratic</div>
+          </div>
+          <div style="display:flex;align-items:center;color:var(--text3);font-family:var(--font-display);font-size:24px;font-weight:900">VS</div>
+          <div style="flex:1;text-align:center;padding:16px;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.2);border-radius:8px">
+            <div style="font-size:28px;margin-bottom:6px">🔴</div>
+            <div style="font-weight:700;font-size:14px">Gov. T. Hawkins</div>
+            <div style="font-family:var(--font-mono);font-size:9px;color:var(--rep);margin-top:3px">Republican</div>
+          </div>
+        </div>
+        <div style="padding:14px 20px;border-top:1px solid var(--border)">
+          <div style="font-size:12px;color:var(--text2);margin-bottom:12px;font-style:italic">"My plan will invest $3 trillion in America's future and ensure no family goes without healthcare."</div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-family:var(--font-mono);font-size:9px;color:var(--text3);white-space:nowrap">MOMENTUM</span>
+            <div style="flex:1;height:6px;background:var(--bg3);border-radius:3px;overflow:hidden">
+              <div id="ts-debate-mom" style="height:100%;background:var(--green);width:45%;transition:width 1.2s ease;border-radius:3px"></div>
+            </div>
+            <span style="font-family:var(--font-mono);font-size:11px;font-weight:600;color:var(--green)" id="ts-debate-mom-lbl">+6.5</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SCENE 7: CONVENTION ── -->
+  <div class="ts-scene" id="ts-s7">
+    <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 40%,rgba(200,168,75,.1) 0%,transparent 60%)"></div>
+    <div style="position:relative;display:flex;flex-direction:column;align-items:center;gap:20px;text-align:center">
+      <div class="ts-eyebrow" id="ts-s7-ey">Democratic National Convention</div>
+      <div class="ts-headline" id="ts-s7-h1">Secure your party's nomination.</div>
+      <!-- Delegate counter -->
+      <div id="ts-convention-wrap" class="ts-panel ts-enter" style="padding:28px 40px;min-width:360px">
+        <div style="font-family:var(--font-mono);font-size:9px;color:var(--text3);letter-spacing:.2em;margin-bottom:14px">DELEGATE COUNT</div>
+        <div style="display:flex;align-items:baseline;justify-content:center;gap:10px;margin-bottom:8px">
+          <div class="ts-ev-num" id="ts-del-count" style="color:var(--accent)">1,312</div>
+          <div style="font-family:var(--font-mono);font-size:16px;color:var(--text3)">/ 1,991</div>
+        </div>
+        <div style="height:8px;background:var(--bg3);border-radius:4px;overflow:hidden;margin-bottom:16px">
+          <div id="ts-del-bar" style="height:100%;background:linear-gradient(90deg,var(--accent),#e8a030);width:0%;transition:width .8s ease;border-radius:4px"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px" id="ts-del-rows">
+          <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:var(--text2)">Alex Morgan</span><span style="font-family:var(--font-mono);color:var(--accent)" id="ts-dr-p">1,312</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:var(--text2)">Sen. T. Hawkins</span><span style="font-family:var(--font-mono);color:#22d3ee">421</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:var(--text2)">Gov. M. Chen</span><span style="font-family:var(--font-mono);color:#f472b6">258</span></div>
+        </div>
+        <div id="ts-nominated-banner" style="display:none;margin-top:18px;padding:12px;background:rgba(200,168,75,.1);border:1.5px solid var(--accent);border-radius:8px">
+          <div style="font-family:var(--font-display);font-size:20px;font-weight:900;color:var(--accent)">🎉 Nomination Secured!</div>
+          <div style="font-family:var(--font-mono);font-size:10px;color:var(--text2);margin-top:4px">2,104 delegates · Democratic Nominee</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SCENE 8: ELECTION NIGHT ── -->
+  <div class="ts-scene" id="ts-s8">
+    <div style="position:absolute;inset:0;display:flex;flex-direction:column">
+      <!-- Network broadcast header bar -->
+      <div style="background:linear-gradient(90deg,#0a0d15,#0d1020,#0a0d15);border-bottom:3px solid #c8a84b;padding:0;height:60px;display:flex;align-items:stretch;flex-shrink:0">
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 18px;border-right:1px solid rgba(200,168,75,.2);flex-shrink:0">
+          <div style="font-family:var(--font-display);font-size:22px;font-weight:900;color:var(--accent);line-height:1">POTUS</div>
+          <div style="font-family:var(--font-mono);font-size:7px;letter-spacing:.25em;color:rgba(200,168,75,.5)">DECISION DESK</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:5px;padding:0 12px;border-right:1px solid #1e2535;flex-shrink:0">
+          <div style="width:9px;height:9px;border-radius:50%;background:#ef4444;animation:tsFlicker .8s ease-in-out infinite"></div>
+          <div style="font-family:var(--font-mono);font-size:11px;font-weight:700;color:#ef4444;letter-spacing:.15em">LIVE</div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;justify-content:center;padding:0 14px;border-right:1px solid #1e2535;min-width:0">
+          <div style="font-family:var(--font-mono);font-size:8px;letter-spacing:.2em;color:rgba(255,255,255,.3);text-transform:uppercase;margin-bottom:2px">Election Night Coverage — November 5</div>
+          <div style="font-family:var(--font-display);font-size:14px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="ts-en-ticker">Polls closing across Eastern time zone...</div>
+        </div>
+        <!-- EV Totals in header -->
+        <div style="display:flex;align-items:center;gap:8px;padding:0 16px;border-right:1px solid #1e2535;flex-shrink:0">
+          <div style="text-align:center"><div style="font-family:var(--font-display);font-size:28px;font-weight:900;color:var(--dem);line-height:1" id="ts-ev-dem">0</div><div style="font-family:var(--font-mono);font-size:7px;color:var(--text3)">MORGAN</div></div>
+          <div style="font-family:var(--font-mono);font-size:10px;color:var(--text3)">270</div>
+          <div style="text-align:center"><div style="font-family:var(--font-display);font-size:28px;font-weight:900;color:var(--rep);line-height:1" id="ts-ev-rep">0</div><div style="font-family:var(--font-mono);font-size:7px;color:var(--text3)">THOMPSON</div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;justify-content:center;padding:0 14px;flex-shrink:0">
+          <div style="font-family:var(--font-mono);font-size:16px;font-weight:700;color:#e8ecf4;line-height:1">EST <b id="ts-en-clock">7:00 PM</b></div>
+          <div style="font-family:var(--font-mono);font-size:7px;color:var(--text3);letter-spacing:.1em;margin-top:2px">NOV 5, 2024</div>
+        </div>
+      </div>
+      <!-- Congress scoreboard bar -->
+      <div style="background:#0d1117;border-bottom:1px solid #1e2535;padding:5px 16px;display:flex;align-items:center;gap:14px;flex-shrink:0">
+        <div style="font-family:var(--font-mono);font-size:8px;letter-spacing:.2em;color:#4a5568;text-transform:uppercase;flex-shrink:0">Congress</div>
+        <!-- Senate -->
+        <div style="display:flex;align-items:center;gap:6px;flex:1">
+          <div style="font-family:var(--font-mono);font-size:9px;font-weight:700;color:rgba(255,255,255,.5);white-space:nowrap;min-width:48px">SENATE</div>
+          <div style="font-family:var(--font-mono);font-size:13px;font-weight:700;color:#3b82f6;min-width:24px;text-align:right" id="ts-senate-dem">47</div>
+          <div style="flex:1;height:5px;background:#1e2535;border-radius:3px;overflow:hidden;position:relative;min-width:50px">
+            <div id="ts-senate-bar-dem" style="position:absolute;left:0;top:0;height:100%;background:#3b82f6;width:47%;transition:width .8s ease"></div>
+            <div id="ts-senate-bar-rep" style="position:absolute;right:0;top:0;height:100%;background:#ef4444;width:53%;transition:width .8s ease"></div>
+          </div>
+          <div style="font-family:var(--font-mono);font-size:13px;font-weight:700;color:#ef4444;min-width:24px" id="ts-senate-rep">53</div>
+          <div style="font-family:var(--font-mono);font-size:7px;color:#4a5568;white-space:nowrap">Need 51</div>
+        </div>
+        <div style="width:1px;height:20px;background:#1e2535;flex-shrink:0"></div>
+        <!-- House -->
+        <div style="display:flex;align-items:center;gap:6px;flex:1">
+          <div style="font-family:var(--font-mono);font-size:9px;font-weight:700;color:rgba(255,255,255,.5);white-space:nowrap;min-width:44px">HOUSE</div>
+          <div style="font-family:var(--font-mono);font-size:13px;font-weight:700;color:#3b82f6;min-width:26px;text-align:right" id="ts-house-dem">210</div>
+          <div style="flex:1;height:5px;background:#1e2535;border-radius:3px;overflow:hidden;position:relative;min-width:50px">
+            <div id="ts-house-bar-dem" style="position:absolute;left:0;top:0;height:100%;background:#3b82f6;width:48%;transition:width .8s ease"></div>
+            <div id="ts-house-bar-rep" style="position:absolute;right:0;top:0;height:100%;background:#ef4444;width:52%;transition:width .8s ease"></div>
+          </div>
+          <div style="font-family:var(--font-mono);font-size:13px;font-weight:700;color:#ef4444;min-width:26px" id="ts-house-rep">225</div>
+          <div style="font-family:var(--font-mono);font-size:7px;color:#4a5568;white-space:nowrap">Need 218</div>
+        </div>
+      </div>
+      <!-- EV bar -->
+      <div style="height:7px;background:var(--bg3);display:flex;flex-shrink:0">
+        <div id="ts-en-bar-dem" style="height:100%;background:var(--dem);width:0%;transition:width .5s ease"></div>
+        <div id="ts-en-bar-rep" style="height:100%;background:var(--rep);width:0%;transition:width .5s ease;margin-left:auto"></div>
+      </div>
+      <!-- Map -->
+      <div style="flex:1;position:relative;overflow:hidden">
+        <svg id="ts-map-s8" viewBox="0 0 960 600" style="position:absolute;inset:0;width:100%;height:100%"></svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SCENE 9: VICTORY ── -->
+  <div class="ts-scene" id="ts-s9">
+    <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 30%,rgba(200,168,75,.12) 0%,transparent 60%)"></div>
+    <div style="position:relative;display:flex;flex-direction:column;align-items:center;gap:18px;text-align:center;padding:24px">
+      <div class="ts-eyebrow" id="ts-s9-ey">November 5th</div>
+      <div style="font-family:var(--font-display);font-size:clamp(48px,9vw,96px);font-weight:900;color:var(--accent);line-height:.9;opacity:0;transition:opacity .6s .1s" id="ts-s9-win">🇺🇸 ELECTED</div>
+      <div style="font-family:var(--font-display);font-size:clamp(16px,2vw,22px);color:var(--text2);opacity:0;transition:opacity .5s .3s" id="ts-s9-name">President-Elect Alex Morgan</div>
+      <!-- EV breakdown -->
+      <div style="display:flex;gap:20px;margin-top:8px;opacity:0;transition:opacity .5s .5s" id="ts-s9-stats">
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px 24px;text-align:center">
+          <div class="ts-ev-num" style="color:var(--dem)">284</div>
+          <div style="font-family:var(--font-mono);font-size:9px;color:var(--text3);margin-top:4px">ELECTORAL VOTES</div>
+        </div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px 24px;text-align:center">
+          <div class="ts-ev-num" style="font-size:clamp(24px,4vw,42px);color:#22c55e">51.3%</div>
+          <div style="font-family:var(--font-mono);font-size:9px;color:var(--text3);margin-top:4px">POPULAR VOTE</div>
+        </div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px 24px;text-align:center">
+          <div class="ts-ev-num" style="font-size:clamp(24px,4vw,42px);color:var(--swing)">87%</div>
+          <div style="font-family:var(--font-mono);font-size:9px;color:var(--text3);margin-top:4px">WIN PROBABILITY</div>
+        </div>
+      </div>
+      <div style="font-family:var(--font-display);font-size:clamp(18px,3vw,32px);font-weight:700;color:rgba(255,255,255,.6);opacity:0;transition:opacity .5s .7s" id="ts-s9-sub">Every choice mattered.</div>
+    </div>
+  </div>
+
+  <!-- ── SCENE 10: OUTRO ── -->
+  <div class="ts-scene" id="ts-s10">
+    <div style="text-align:center">
+      <div style="font-family:var(--font-display);font-size:clamp(56px,12vw,128px);font-weight:900;letter-spacing:-4px;background:linear-gradient(135deg,#fff 0%,var(--accent) 55%,#c87941 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;opacity:0;transition:opacity .9s" id="ts-outro-logo">POTUS</div>
+      <div style="font-family:var(--font-mono);font-size:clamp(11px,1.5vw,16px);letter-spacing:.35em;color:var(--text2);margin-top:18px;text-transform:uppercase;opacity:0;transition:opacity .7s .4s" id="ts-outro-sub">Presidential Election Simulator</div>
+      <div style="margin-top:28px;opacity:0;transition:opacity .6s .9s" id="ts-outro-cta">
+        <button onclick="exitTourMode()" style="padding:14px 32px;background:var(--accent);border:none;border-radius:var(--radius);color:#0a0c10;font-family:var(--font-display);font-size:16px;font-weight:700;cursor:pointer;transition:all .2s" onmouseover="this.style.background='var(--accent2)'" onmouseout="this.style.background='var(--accent)'">Play Now →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── CRISIS EVENT MODAL ── -->
+<div id="crisis-event-modal" class="modal-overlay" style="z-index:9100">
+  <div style="max-width:560px;width:95%;border-radius:0;overflow:hidden;box-shadow:0 0 0 1px rgba(239,68,68,.4),0 30px 80px rgba(0,0,0,.85),0 0 60px rgba(239,68,68,.12);animation:crisisModalIn .35s cubic-bezier(.34,1.2,.64,1) both">
+    <!-- Breaking News Header Bar -->
+    <div style="background:#dc2626;padding:0;display:flex;align-items:stretch">
+      <div style="background:#b91c1c;padding:8px 14px;display:flex;align-items:center;gap:7px;flex-shrink:0;border-right:2px solid rgba(255,255,255,.15)">
+        <span style="width:8px;height:8px;border-radius:50%;background:#fff;animation:enPulse 1s infinite;display:inline-block;flex-shrink:0"></span>
+        <span style="font-family:var(--font-mono);font-size:10px;font-weight:700;color:#fff;letter-spacing:.18em">BREAKING</span>
+      </div>
+      <div style="padding:8px 14px;display:flex;align-items:center;flex:1">
+        <span style="font-family:var(--font-mono);font-size:10px;color:rgba(255,255,255,.9);letter-spacing:.1em;text-transform:uppercase">⚡ Crisis Requires Immediate Response</span>
+      </div>
+    </div>
+    <!-- Main body -->
+    <div style="background:#0d1117;border:1px solid rgba(239,68,68,.25);border-top:none;padding:20px 22px 22px">
+      <!-- Icon + Title -->
+      <div style="display:flex;align-items:flex-start;gap:14px;margin-bottom:16px">
+        <div id="crisis-modal-icon" style="font-size:38px;flex-shrink:0;line-height:1;margin-top:2px;filter:drop-shadow(0 0 12px rgba(239,68,68,.4))"></div>
+        <div style="flex:1;min-width:0">
+          <div id="crisis-modal-title" style="font-family:var(--font-display);font-size:22px;font-weight:800;color:#f1f5f9;line-height:1.2;letter-spacing:-.3px"></div>
+          <div style="width:40px;height:3px;background:#dc2626;border-radius:2px;margin-top:8px"></div>
+        </div>
+      </div>
+      <!-- Intro text -->
+      <div id="crisis-modal-intro" style="font-size:13px;color:#94a3b8;line-height:1.75;margin-bottom:20px;padding:14px 16px;background:rgba(239,68,68,.04);border-left:3px solid #dc2626;border-radius:0 6px 6px 0"></div>
+      <!-- Response label -->
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+        <div style="font-family:var(--font-mono);font-size:9px;color:#64748b;letter-spacing:.2em;text-transform:uppercase">Your Response</div>
+        <div style="flex:1;height:1px;background:rgba(239,68,68,.15)"></div>
+      </div>
+      <div id="crisis-modal-choices"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── HISTORICAL ELECTION INTRO VIDEO OVERLAY ── -->
+<div id="hist-video-overlay" style="display:none;position:fixed;inset:0;z-index:9500;background:#000;flex-direction:column;align-items:center;justify-content:center">
+  <video id="hist-intro-video" style="max-width:100%;max-height:85vh;outline:none" playsinline>
+    Your browser doesn't support video.
+  </video>
+  <div style="position:absolute;bottom:32px;left:0;right:0;text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px">
+    <div id="hist-video-label" style="font-family:var(--font-mono);font-size:11px;color:rgba(255,255,255,.5);letter-spacing:.15em;text-transform:uppercase"></div>
+    <button onclick="skipHistIntroVideo()" style="padding:8px 22px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);border-radius:20px;color:rgba(255,255,255,.7);font-family:var(--font-mono);font-size:11px;cursor:pointer;transition:all .2s" onmouseover="this.style.background='rgba(255,255,255,.2)'" onmouseout="this.style.background='rgba(255,255,255,.12)'">Skip ▶</button>
+  </div>
+</div>
+
+<!-- ── HISTORICAL ELECTIONS CAROUSEL MODAL ── -->
+<div class="modal-overlay" id="hist-carousel-modal" style="z-index:9200;align-items:flex-start;padding:20px;overflow-y:auto">
+  <div class="modal" style="max-width:680px;width:100%;margin:auto">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">📜 Historical Elections</div>
+        <div style="font-family:var(--font-mono);font-size:10px;color:var(--text2);margin-top:3px">1980 – 2024 · Choose an election and pick your side</div>
+      </div>
+      <button class="modal-close" onclick="document.getElementById('hist-carousel-modal').classList.remove('active')">×</button>
+    </div>
+    <div class="modal-body" style="padding:16px">
+      <div id="hist-carousel-content" style="display:flex;flex-direction:column;gap:14px"></div>
+    </div>
+  </div>
+</div>
+
+<style>
+.hist-year-card{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px 16px;transition:border-color .2s}
+.hist-year-card:hover{border-color:rgba(167,139,250,.4)}
+.hist-year-header{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.hist-year-num{font-family:var(--font-display);font-size:24px;font-weight:900;color:#a78bfa}
+.year-badge{font-family:var(--font-mono);font-size:9px;padding:3px 8px;background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.3);border-radius:20px;color:#a78bfa;letter-spacing:.05em}
+.hist-matchup{font-family:var(--font-mono);font-size:11px;color:var(--text2);margin-bottom:10px}
+.hist-side-select{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.hist-side-btn{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;cursor:pointer;text-align:left;transition:all .2s;color:var(--text)}
+.hist-side-btn:hover{border-color:#a78bfa;background:rgba(167,139,250,.08)}
+.hist-icon{font-size:22px;margin-bottom:4px}
+.hist-side-name{font-family:var(--font-display);font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px}
+.hist-side-tag{font-family:var(--font-mono);font-size:9px;color:var(--text3);line-height:1.4}
+</style>
+
+<!-- ── ACHIEVEMENTS MODAL ── -->
+<div id="achievements-modal" class="modal-overlay" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.75);display:none;align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:12px;width:100%;max-width:500px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden">
+    <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--accent)">🏆 Achievements</div>
+        <div style="font-family:var(--font-mono);font-size:10px;color:var(--text3);margin-top:2px" id="ach-modal-count">Loading...</div>
+      </div>
+      <button onclick="closeAchievementsModal()" style="background:transparent;border:1px solid var(--border);border-radius:var(--radius);color:var(--text2);padding:6px 12px;font-family:var(--font-mono);font-size:11px;cursor:pointer">✕ Close</button>
+    </div>
+    <div id="ach-modal-list" style="overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:8px"></div>
+  </div>
+</div>
+
+</body>
+</html>

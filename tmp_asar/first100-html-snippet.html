@@ -1,0 +1,87 @@
+<!-- ═══════════════════════════════════════════════════════════════
+     FIRST 100 DAYS SCREEN
+     INSERT THIS BLOCK into index.html, after the #breakdown-screen div.
+     Also add to <head>:
+       <link rel="stylesheet" href="first100.css">
+     And before </body>:
+       <script src="game-first100.js"></script>
+     ═══════════════════════════════════════════════════════════════ -->
+
+<div id="first100-screen" class="screen">
+
+  <!-- ── NETWORK BAR ── -->
+  <div class="en-network-bar">
+    <div class="en-network-logo-block">
+      <div class="en-network-name">P100</div>
+      <div class="en-network-tagline">First 100 Days</div>
+    </div>
+    <div class="en-live-badge">
+      <div class="en-live-dot-large"></div>
+      <div id="p100-day-badge" style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:#ef4444;letter-spacing:.15em">DAY 1 OF 100</div>
+    </div>
+    <div class="en-headline-block">
+      <div class="en-headline-title">ADMINISTRATION BRIEFING</div>
+      <div class="en-headline-main" id="p100-headline-main">THE FIRST 100 DAYS</div>
+    </div>
+    <div style="display:flex;align-items:center;padding:0 14px;border-right:1px solid #1e2535;flex-shrink:0">
+      <div id="p100-phase-badge" style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:#c8a84b;letter-spacing:.15em;padding:2px 8px;border:1px solid rgba(200,168,75,.3);border-radius:3px">🏛 TRANSITION PHASE</div>
+    </div>
+    <div class="en-clock-block">
+      <div class="en-clock" id="p100-clock">00:00:00</div>
+      <div class="en-date-label">WHITE HOUSE</div>
+    </div>
+  </div>
+
+  <!-- ── MILESTONE PROGRESS BAR ── -->
+  <div class="p100-milestone-bar" id="p100-milestone-bar">
+    <!-- Rendered by JS: _renderMilestoneBar() -->
+  </div>
+
+  <!-- ── BODY ── -->
+  <div class="p100-body">
+
+    <!-- MAIN (event area) -->
+    <div class="p100-main" id="p100-event-area">
+      <div class="p100-event-placeholder">
+        <div class="p100-event-ph-icon">📋</div>
+        <div class="p100-event-ph-title">Preparing your first briefing…</div>
+      </div>
+    </div>
+
+    <!-- SIDEBAR -->
+    <div class="p100-sidebar">
+
+      <!-- Approval gauge -->
+      <div class="p100-sidebar-section">
+        <div id="p100-approval-gauge">
+          <div class="p100-gauge-label">APPROVAL RATING</div>
+          <div class="p100-gauge-num" style="color:#c8a84b">—</div>
+        </div>
+      </div>
+
+      <!-- Stat bars -->
+      <div class="p100-sidebar-section">
+        <div class="p100-panel-title">POLICY PERFORMANCE</div>
+        <div id="p100-stat-bars"></div>
+      </div>
+
+      <!-- Congress -->
+      <div class="p100-sidebar-section">
+        <div id="p100-congress-panel"></div>
+      </div>
+
+      <!-- Cabinet -->
+      <div class="p100-sidebar-section">
+        <div id="p100-cabinet-panel"></div>
+      </div>
+
+    </div><!-- /sidebar -->
+  </div><!-- /body -->
+
+  <!-- ── NEWS TICKER ── -->
+  <div id="p100-news-ticker" style="display:none;position:relative;height:32px;background:#0a0c10;border-top:1px solid #1e2535;display:flex;align-items:center;overflow:hidden;flex-shrink:0">
+    <div id="p100-ticker-label" style="flex-shrink:0;font-family:'IBM Plex Mono',monospace;font-size:10px;background:#c8a84b;color:#0a0c10;padding:0 12px;height:100%;display:flex;align-items:center;font-weight:700;letter-spacing:.1em">BRIEFING</div>
+    <div id="p100-ticker-inner" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#e8ecf4;padding:0 24px;white-space:nowrap;animation:ticker 40s linear infinite"></div>
+  </div>
+
+</div><!-- /#first100-screen -->
