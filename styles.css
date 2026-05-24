@@ -18,7 +18,23 @@
   --section-gap:10px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-size:calc(var(--fs-base)*var(--ui-scale));min-height:100vh;overflow-x:hidden;line-height:1.5;user-select:none;-webkit-user-select:none}
+
+/* ── Custom scrollbar ── */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:10px}
+::-webkit-scrollbar-thumb:hover{background:var(--text3)}
+::-webkit-scrollbar-corner{background:transparent}
+
+body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-size:calc(var(--fs-base)*var(--ui-scale));min-height:100vh;overflow-x:hidden;line-height:1.5}
+/* Text selection colour */
+::selection{background:rgba(59,130,246,.4);color:#e8ecf4}
+::-moz-selection{background:rgba(59,130,246,.4);color:#e8ecf4}
+
+/* Prevent accidental selection on interactive controls, allow selection on content */
+button,.action-btn,.next-week-btn,.play-again-btn,.stat-bar-row,.topbar,.phase-indicator,
+.panel-title,.tab-btn,.action-tab,.diff-btn,.party-btn,.modal-close,.modal-btn,
+.mute-btn,.tut-next-btn,.tut-skip-btn,.en-network-bar,#p100-news-ticker{user-select:none;-webkit-user-select:none}
 /* Allow text selection in inputs and textarea */
 input,textarea,select,.allow-select{user-select:text;-webkit-user-select:text}
 /* ── Global smooth hover transitions ── */
@@ -684,3 +700,59 @@ input[type="range"].filled {
   from { opacity: 0; transform: scale(.94) translateY(-12px); }
   to   { opacity: 1; transform: scale(1) translateY(0); }
 }
+
+/* ══ CUSTOM CURSOR ══ */
+*, *::before, *::after { cursor: none !important; }
+
+#custom-cursor {
+  position: fixed;
+  top: 0; left: 0;
+  width: 12px; height: 12px;
+  background: var(--accent);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 999999;
+  transform: translate(-50%, -50%);
+  transition: transform 0.08s ease, width 0.15s ease, height 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 0 6px 1px rgba(200,168,75,0.6);
+  mix-blend-mode: normal;
+}
+
+#custom-cursor.cursor-click {
+  width: 8px; height: 8px;
+  background: var(--accent2);
+  box-shadow: 0 0 12px 4px rgba(232,201,106,0.9);
+}
+
+#custom-cursor-ring {
+  position: fixed;
+  top: 0; left: 0;
+  width: 30px; height: 30px;
+  border: 1.5px solid rgba(200,168,75,0.45);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 999998;
+  transform: translate(-50%, -50%);
+  transition: transform 0.18s ease, width 0.2s ease, height 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
+}
+
+#custom-cursor-ring.cursor-hover {
+  width: 44px; height: 44px;
+  border-color: rgba(200,168,75,0.75);
+}
+
+/* ══ HOMEPAGE GOLD AURA ══ */
+#cursor-aura {
+  position: fixed;
+  top: 0; left: 0;
+  width: 340px; height: 340px;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(200,168,75,0.13) 0%, rgba(200,168,75,0.05) 35%, transparent 70%);
+  transition: opacity 0.4s ease;
+  opacity: 0;
+}
+
+#cursor-aura.aura-visible { opacity: 1; }

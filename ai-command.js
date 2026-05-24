@@ -5,8 +5,7 @@
 (function () {
   'use strict';
 
-  const WORKER_URL = 'https://potus-ai.danielmdoody.workers.dev/';
-  window._POTUS_AI_WORKER_URL = WORKER_URL;
+
 
   // ── STATE LOOKUP ──────────────────────────────────────────────────────────
   // Sorted longest-first so "new hampshire" always matches before "new"
@@ -394,11 +393,10 @@
     return `You are a seasoned, sharp-tongued American political campaign advisor — think James Carville meets a war-room veteran. You speak in vivid, punchy language. You never hedge. You reference specific numbers. You vary your opening every time (never start with "I" or "You should"). Sometimes you use a memorable political metaphor. Sometimes you're blunt and urgent. Sometimes darkly humorous. Always confident.\n\n${raceNote}\n\n${directive}\n\nGAME STATE:\n${gameContext}\n\nWrite 2-3 sentences of direct, flavourful strategic advice. Reference actual numbers from the game state. Be specific to ${sn || 'this action'}. Vary your tone — urgent, wry, motivating, or tactical depending on the situation. Return ONLY the advice text - no JSON, no preamble, no bullet points, no state suggestions.`;
   }
 
-  // ── WORKER CALL (advice text only) ───────────────────────────────────────
+  // ── ADVISOR CALL (advice text only) ──────────────────────────────────────
   // Priority order:
   //   1. Local bundled model via IPC (desktop .exe only, instant, no internet)
-  //   2. Groq worker (web + desktop fallback, requires internet)
-  //   3. localAdvice() hardcoded strings (always works, called by the send() wrapper)
+  //   2. localAdvice() hardcoded strings (always works, called by the send() wrapper)
   async function fetchAdvice(actionId, stateCode, text, gameContext) {
     const prompt = buildAdvicePrompt(actionId, stateCode, gameContext);
 
@@ -412,15 +410,7 @@
       }
     }
 
-    // ── 2. Try Groq worker (web + desktop fallback) ────────────────────────
-    const res = await fetch(WORKER_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text, context: gameContext, prompt, adviceOnly: true }),
-    });
-    if (!res.ok) throw new Error(`Worker ${res.status}`);
-    const data = await res.json();
-    return data.advice || data.text || null;
+    return null;
   }
 
   // ── QUEUE ACTION IN GAME ENGINE ───────────────────────────────────────────
@@ -485,9 +475,7 @@
       el.style.cssText = 'display:flex;gap:8px;align-items:flex-start';
       el.innerHTML = `
         <div style="width:26px;height:26px;border-radius:50%;background:rgba(200,168,75,.12);border:1px solid rgba(200,168,75,.25);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;margin-top:1px">✨</div>
-        <div style="background:rgba(200,168,75,.04);border:1px solid rgba(200,168,75,.1);border-radius:2px 8px 8px 8px;padding:9px 12px;font-size:12px;color:#c8d0e0;max-width:92%;line-height:1.65;flex:0 1 auto;width:fit-content;word-wrap:break-word;overflow-wrap:anywhere;word-break:break-word;white-space:pre-wrap">
-          ${html}${chipHtml}
-        </div>`;
+        <div style="background:rgba(200,168,75,.04);border:1px solid rgba(200,168,75,.1);border-radius:2px 8px 8px 8px;padding:9px 12px;font-size:12px;color:#c8d0e0;max-width:92%;line-height:1.65;flex:0 1 auto;width:fit-content;word-wrap:break-word;overflow-wrap:anywhere;word-break:break-word;white-space:pre-wrap">${html}${chipHtml}</div>`;
     }
     log.appendChild(el);
     log.scrollTop = log.scrollHeight;
@@ -733,7 +721,7 @@
           <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#c8a84b">AI Campaign Advisor</div>
           <div style="font-family:'IBM Plex Mono',monospace;font-size:8px;color:#4a5568;margin-top:1px">Reads your live map - Plans your strategy</div>
         </div>
-        <span style="font-family:'IBM Plex Mono',monospace;font-size:8px;padding:2px 7px;border-radius:10px;background:rgba(200,168,75,.08);border:1px solid rgba(200,168,75,.18);color:rgba(200,168,75,.55)">${window.isElectron ? '🖥 LOCAL AI' : '⚡ FREE - GROQ'}</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:8px;padding:2px 7px;border-radius:10px;background:rgba(200,168,75,.08);border:1px solid rgba(200,168,75,.18);color:rgba(200,168,75,.55)">🖥 LOCAL AI</span>
       </div>
       <div id="ai-chat-log" style="max-height:240px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;margin-bottom:10px;padding-right:2px;scrollbar-width:thin;scrollbar-color:#1e2535 transparent;"></div>
       <div style="display:flex;gap:7px;align-items:flex-end">

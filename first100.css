@@ -82,6 +82,7 @@
    4. BODY LAYOUT
    ══════════════════════════════════════════════════════════════════════════ */
 .p100-body { display: grid; grid-template-columns: 1fr 300px; flex: 1; overflow: hidden; }
+.p100-body.has-xfeed { grid-template-columns: 200px 1fr 260px; }
 
 #p100-event-area {
   padding: 16px;
@@ -691,8 +692,8 @@
 /* ══════════════════════════════════════════════════════════════════════════
    22. RESPONSIVE
    ══════════════════════════════════════════════════════════════════════════ */
-@media (max-width: 1100px) { .p100-body { grid-template-columns: 1fr 260px; } }
-@media (max-width: 900px)  { .p100-body { grid-template-columns: 1fr; } .p100-sidebar { display: none; } .p100-end-stats-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 1100px) { .p100-body { grid-template-columns: 1fr 260px; } .p100-body.has-xfeed { grid-template-columns: 180px 1fr 230px; } }
+@media (max-width: 900px)  { .p100-body, .p100-body.has-xfeed { grid-template-columns: 1fr; } .p100-sidebar { display: none; } #p100-xfeed-col { display: none; } .p100-end-stats-grid { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 600px)  { .p100-event-headline { font-size: 18px; } .p100-end-grade { font-size: 52px; } .p100-end-stats-grid { grid-template-columns: 1fr; } .p100-end-btns { flex-direction: column; } }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -704,4 +705,114 @@
 .p100-next-btn:focus-visible {
   outline: 2px solid #c8a84b;
   outline-offset: 2px;
+}
+
+
+
+/* ── X FEED COLUMN ──────────────────────────────────────────────────────────── */
+#p100-xfeed-col {
+  border-right: 1px solid #1e2535;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #080b12;
+  min-width: 0;
+}
+
+.p100-xfeed-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #1e2535;
+  flex-shrink: 0;
+  background: #080b12;
+}
+
+#p100-xfeed-panel {
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #1e2535 transparent;
+}
+#p100-xfeed-panel::-webkit-scrollbar { width: 3px; }
+#p100-xfeed-panel::-webkit-scrollbar-thumb { background: #1e2535; border-radius: 2px; }
+
+.p100-xfeed-empty {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  color: #2a3348;
+  padding: 16px 12px;
+  text-align: center;
+}
+
+.p100-xfeed-live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #22c55e;
+  animation: blink 1.2s ease-in-out infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+
+/* Responsive: hide X feed on narrower viewports */
+@media (max-width: 1250px) {
+  .p100-body.has-xfeed { grid-template-columns: 185px 1fr 240px; }
+}
+@media (max-width: 1050px) {
+  .p100-body.has-xfeed { grid-template-columns: 1fr 260px; }
+  #p100-xfeed-col { display: none; }
+}
+
+/* ── X FEED POST CARDS ────────────────────────────────────────────────────── */
+.p100-xfeed-post {
+  border-bottom: 1px solid #1e2535;
+  padding: 10px 12px;
+  transition: background .15s;
+}
+.p100-xfeed-post:hover { background: rgba(255,255,255,.02); }
+
+.p100-xfeed-post-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  margin-bottom: 5px;
+}
+.p100-xfeed-post-icon { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+.p100-xfeed-post-meta { flex: 1; min-width: 0; }
+.p100-xfeed-post-name {
+  font-size: 11px;
+  font-weight: 700;
+  color: #e8ecf4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.p100-xfeed-post-handle {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  color: #4a5568;
+}
+.p100-xfeed-post-day {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 8px;
+  color: #2a3348;
+  flex-shrink: 0;
+}
+.p100-xfeed-post-text {
+  font-size: 11px;
+  color: #8a93a8;
+  line-height: 1.5;
+  margin-bottom: 6px;
+}
+.p100-xfeed-post-stats {
+  display: flex;
+  gap: 12px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  color: #2a3348;
 }

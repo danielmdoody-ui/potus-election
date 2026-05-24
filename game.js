@@ -2100,6 +2100,7 @@ function startGame(){
   GS._finalResult    = null;
   GS._uniqueActionsUsed = new Set(); // tracks action variety
   GS._boringCampaignFired = false;   // boring campaign event fires at most once per phase
+  GS._eventQueue = [];                // event queue reset on new game
   if(typeof _firedCrisisIds !== 'undefined' && _firedCrisisIds) _firedCrisisIds.clear();
   GS.playerName=document.getElementById('player-name').value||'Alex Morgan';
   // Custom party: treat as 'ind' internally but carry display name/color/icon
@@ -2269,6 +2270,7 @@ function startIndependentGeneral(){
   GS._crisisCountThisPhase = 0; GS._lastCrisisWeek = 0; GS._crisisArmed = false;
   GS._uniqueActionsUsed = new Set();
   GS._boringCampaignFired = false;
+  GS._eventQueue = [];
   GS._recentActions = [];
   GS.nationalMood = pickNationalMood();
 
@@ -6095,6 +6097,39 @@ function nextWeek(){
   GS.mediaBias=cl(GS.mediaBias+partyDrift*0.5,-100,100);
   autoSaveGame(); // auto-save every week
   renderAll();
+
+  // ── FREE ACTION: read textarea, process via AI, inject result into summary ──
+  const freeInput = document.getElementById('free-action-input');
+  const freeText = freeInput ? freeInput.value.trim() : '';
+  if(freeText){
+    (async ()=>{
+      const resultEl = document.getElementById('free-action-result');
+      if(resultEl){ resultEl.style.display='block'; resultEl.textContent='⏳ Processing your action…'; }
+      let outcome = '';
+      try {
+        if(window.isElectron && window.localAI && typeof window.localAI.getAdvice === 'function'){
+          const prompt = `You are a US presidential campaign simulation engine. The player is ${GS.playerName}, running as ${GS.playerPartyLabel||GS.playerParty}, week ${GS.week}. Their favorability is ${GS.favorability.toFixed(1)}%, momentum ${GS.momentum.toFixed(1)}.
+
+The player typed this free campaign action: "${freeText}"
+
+Write 2-3 sentences describing the realistic outcome of this action. Be specific, dramatic, and grounded in campaign reality. Include one concrete stat effect (e.g. +2 favorability, -1 momentum). Do not repeat the action back, just describe what happens next.`;
+          outcome = await window.localAI.getAdvice(prompt);
+        }
+      } catch(e){ console.warn('[free action AI]', e); }
+      if(!outcome || outcome.length < 20){
+        // Deterministic fallback
+        const tone = freeText.length > 80 ? 'detailed' : 'brief';
+        outcome = `Your ${tone} campaign move generated moderate press coverage. The team executed as planned — a small favorability bump (+1%) as voters see you taking initiative.`;
+      }
+      if(resultEl){ resultEl.textContent = outcome; }
+      addNews(`${GS.playerName}: "${freeText.slice(0,60)}${freeText.length>60?'…':''}"`, 'campaign');
+      if(freeInput) freeInput.value = '';
+    })();
+  } else {
+    const resultEl = document.getElementById('free-action-result');
+    if(resultEl) resultEl.style.display = 'none';
+  }
+
   showSummary(events);
 
   // Phase transitions — handled in closeSummary to avoid double-fire
@@ -7108,6 +7143,95 @@ function showEndScreen(won,reason,pEV=0,oEV=0,popVote=null){
   _newlyForToasts.forEach((a, i) => setTimeout(() => showAchievementToast(a), 800 + i * 1200));
 }
 
+function showNewsInterstitial(){
+  const r = window.GS?._finalResult;
+  showScreen('news-interstitial-screen');
+  // Reset body to spinner while AI generates
+  const body = document.getElementById('news-interstitial-body');
+  if(body) body.innerHTML = `<div style="display:flex;align-items:center;gap:10px"><div style="width:16px;height:16px;border:2px solid #c8a84b;border-top-color:transparent;border-radius:50%;animation:spin 1s linear infinite"></div><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#4a5568">Generating election night coverage…</span></div>`;
+  if(r) _injectElectionNewsArticle(r.finalPlayerEV, r.finalOppEV, r.popVote, 'news-interstitial-body');
+}
+
+async function _injectElectionNewsArticle(pEV, oEV, popVote, containerId){
+  const isInterstitial = containerId === 'news-interstitial-body';
+  const container = document.getElementById(containerId || 'end-screen');
+  if(!container) return;
+
+  if(!isInterstitial){
+    // Remove any stale article from a previous call
+    const old = container.querySelector('.end-news-article');
+    if(old) old.remove();
+    const oldId = document.getElementById('end-news-article');
+    if(oldId) oldId.remove();
+  }
+
+  // Build context strings
+  const party   = GS.playerPartyLabel || (GS.playerParty==='dem'?'Democratic':GS.playerParty==='rep'?'Republican':'Independent');
+  const cr      = GS._congressResult;
+  const popTotal= popVote ? popVote.player + popVote.opp : 0;
+  const popPct  = popTotal > 0 ? (popVote.player/popTotal*100).toFixed(1)+'%' : null;
+  const career  = selCareer || 'politician';
+  const congress= cr ? `Senate ${cr.senate.dem}D-${cr.senate.rep}R, House ${cr.house.dem}D-${cr.house.rep}R.` : '';
+
+  // Short prompt tuned for small local models — gender-neutral throughout
+  const prompt = `Write a short AP-style news article (3-4 paragraphs) reporting that ${GS.playerName} has won the US presidential election. Do not mention gender, pronouns, or personal identity — refer to ${GS.playerName} by name or as "the President-elect". Facts: ${party} party, former ${career}, won ${pEV}-${oEV} electoral votes${popPct?`, ${popPct} of popular vote`:''}. ${congress} Include one short quote from ${GS.playerName}. End with what happens next. Write only the article text, no headline, no labels.`;
+
+  // Gender-neutral fallback
+  const lastName = GS.playerName.split(' ').slice(-1)[0];
+  const fallback = [
+    `${GS.playerName} has won the presidency, defeating the opposition ${pEV} to ${oEV} in the Electoral College. Networks called the race shortly after midnight as key battleground states fell to the ${party} candidate.`,
+    `Supporters flooded the streets of major cities as the result became clear. "Tonight the American people made their voices heard," ${GS.playerName} told the crowd gathered at the victory celebration.`,
+    `${congress ? `Congressional results showed ${congress}` : `The result caps a grueling campaign season.`} Analysts called it a clear mandate for the incoming administration.`,
+    `${lastName} is expected to begin transition briefings immediately. The inauguration is scheduled for January 20th.`
+  ].join('\n\n');
+
+  let articleText = null;
+  try {
+    if(window.isElectron && window.localAI && typeof window.localAI.getNews === 'function'){
+      articleText = await window.localAI.getNews(prompt);
+    }
+  } catch(e){ console.warn('[news article]', e); }
+
+  if(!articleText || articleText.length < 60) articleText = fallback;
+
+  // Render
+  const paragraphs = articleText.trim().split(/\n{1,}/).map(p=>p.trim()).filter(p=>p.length>0);
+  const headline = `${GS.playerName} Wins Presidency With ${pEV} Electoral Votes`;
+  const byline   = `By Staff Reporter · The American Herald · Election Night`;
+
+  const parasHtml = paragraphs.map((p, i) =>
+    `<p style="font-family:'Georgia',serif;font-size:15px;color:${i===0?'#e8ecf4':'#8a93a8'};line-height:1.8;margin:0 0 16px;${i===0?'font-weight:500':''}">${i===0?'<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;font-weight:700;color:#c8a84b;letter-spacing:.1em;margin-right:6px">WASHINGTON —</span>':''}${p}</p>`
+  ).join('');
+
+  if(isInterstitial){
+    container.innerHTML = `
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:8px;color:#c8a84b;letter-spacing:.2em;margin-bottom:14px">⚡ BREAKING NEWS</div>
+      <div style="border-bottom:3px solid #1e2535;margin-bottom:20px;padding-bottom:20px">
+        <h1 style="font-family:'Playfair Display',serif;font-size:clamp(24px,4vw,38px);font-weight:900;color:#e8ecf4;line-height:1.15;margin:0 0 12px">${headline}</h1>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:#4a5568">${byline}</div>
+      </div>
+      ${parasHtml}
+      <div style="height:32px"></div>`;
+  } else {
+    const articleEl = document.createElement('div');
+    articleEl.className = 'end-news-article';
+    articleEl.id = 'end-news-article';
+    articleEl.style.cssText = 'margin-top:28px;max-width:520px;width:100%;text-align:left;background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-left:auto;margin-right:auto;';
+    articleEl.innerHTML = `
+      <div style="background:#0a0c10;padding:10px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px">
+        <span style="font-family:var(--font-mono);font-size:9px;color:var(--accent);letter-spacing:.2em">THE AMERICAN HERALD</span>
+        <span style="font-family:var(--font-mono);font-size:8px;color:var(--text3);margin-left:auto">ELECTION NIGHT EDITION</span>
+      </div>
+      <div style="padding:20px 24px">
+        <div style="font-family:var(--font-mono);font-size:8px;color:var(--accent);letter-spacing:.15em;margin-bottom:10px">⚡ BREAKING</div>
+        <h2 style="font-family:var(--font-display);font-size:clamp(17px,2.8vw,22px);font-weight:900;color:var(--text);line-height:1.25;margin:0 0 10px">${headline}</h2>
+        <div style="font-family:var(--font-mono);font-size:9px;color:var(--text3);margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--border)">${byline}</div>
+        <div>${parasHtml}</div>
+      </div>`;
+    container.appendChild(articleEl);
+  }
+}
+
 // ── RENDER LOOP ──
 function renderSituationRoom(){
   const el = document.getElementById('situation-room');
@@ -8024,7 +8148,64 @@ function shareResult(){
 
 function openSettingsModal(){
   document.getElementById('settings-modal').classList.add('active');
+  _syncResolutionButtons();
 }
+
+async function _syncResolutionButtons(){
+  let isFull = false;
+  if(window.electronWindow){ try{ const s=await window.electronWindow.getState(); isFull=s.fullscreen; }catch(e){} }
+  else isFull = !!document.fullscreenElement;
+  document.getElementById('fullscreen-btn')?.classList.toggle('active', isFull);
+  document.getElementById('windowed-btn')?.classList.toggle('active', !isFull);
+  // Highlight the saved resolution
+  try{
+    const saved = localStorage.getItem('potus_resolution')||'';
+    document.querySelectorAll('#resolution-grid [data-res]').forEach(b=>{
+      b.classList.toggle('active', !!saved && b.dataset.res===saved);
+    });
+  }catch(e){}
+}
+
+function setResolution(w, h, btn){
+  // Deselect ALL resolution buttons precisely by data-res attribute
+  document.querySelectorAll('#resolution-grid [data-res]').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  try{ localStorage.setItem('potus_resolution', w+'x'+h); }catch(e){}
+  if(window.electronWindow){
+    window.electronWindow.setSize(w, h);
+    document.getElementById('windowed-btn')?.classList.add('active');
+    document.getElementById('fullscreen-btn')?.classList.remove('active');
+  }
+}
+
+function setFullscreen(btn){
+  if(window.electronWindow){
+    window.electronWindow.setFullscreen(true).then(()=>_syncResolutionButtons());
+  } else {
+    const el = document.documentElement;
+    (el.requestFullscreen||el.webkitRequestFullscreen||el.mozRequestFullScreen||function(){}).call(el);
+    document.addEventListener('fullscreenchange', _syncResolutionButtons);
+  }
+}
+
+function setWindowed(btn){
+  if(window.electronWindow){
+    // Restore to last saved resolution
+    let w=1280, h=720;
+    try{ const s=localStorage.getItem('potus_resolution'); if(s){const p=s.split('x');w=+p[0];h=+p[1];} }catch(e){}
+    window.electronWindow.setFullscreen(false).then(()=>{
+      window.electronWindow.setSize(w,h);
+      _syncResolutionButtons();
+    });
+  } else {
+    if(document.exitFullscreen&&document.fullscreenElement) document.exitFullscreen();
+    setTimeout(_syncResolutionButtons, 200);
+  }
+  // Reset zoom to 1 — no more fake scaling
+  document.body.style.zoom = 1;
+}
+
+
 
 function setUIScale(scale, btn){
   // Use zoom — scales ALL elements uniformly, not just --ui-scale consumers
@@ -8840,7 +9021,7 @@ function toggleMute(){
   const bgm = document.getElementById('bg-music');
   if(bgm) bgm.muted = _muted;
   const icon = _muted ? '🔇' : '🔊';
-  ['mute-btn','mute-btn-conv','mute-btn-vp','mute-btn-en'].forEach(id=>{
+  ['mute-btn','mute-btn-conv','mute-btn-vp','mute-btn-en','mute-btn-p100','mute-btn-setup'].forEach(id=>{
     const el=document.getElementById(id); if(el){ el.textContent=icon; el.classList.toggle('muted',_muted); }
   });
 }
@@ -10605,15 +10786,19 @@ function _saveObjToGs(obj){
 function saveGame(slot){
   try{
     const key = slot==='auto' ? AUTO_SAVE_KEY : `${SAVE_PREFIX}${slot}`;
+    const inPresidency = typeof P100 !== 'undefined' && P100 && P100.day;
     const saveData = {
       version: 3,
       timestamp: Date.now(),
-      phase: GS.phase,
-      week: GS.week,
-      playerName: GS.playerName,
-      playerParty: GS.playerParty,
+      phase: inPresidency ? 'first100' : GS.phase,
+      week: inPresidency ? null : GS.week,
+      p100Day: inPresidency ? P100.day : null,
+      p100Phase: inPresidency ? (P100.currentPhase||'transition') : null,
+      playerName: inPresidency ? (P100.playerName||GS.playerName) : GS.playerName,
+      playerParty: inPresidency ? (P100.playerParty||GS.playerParty) : GS.playerParty,
       playerPartyLabel: GS.playerPartyLabel||'',
       gs: _gsToSaveObj(),
+      p100: inPresidency ? JSON.parse(JSON.stringify(P100)) : null,
       selParty, selDiff, selCareer,
     };
     localStorage.setItem(key, JSON.stringify(saveData));
@@ -10631,26 +10816,40 @@ function loadGame(slot){
     if(!raw) return false;
     const saveData = JSON.parse(raw);
     if(!saveData || !saveData.gs) return false;
-    // Restore global setup vars so UI reflects saved state
     selParty = saveData.selParty || saveData.playerParty || 'dem';
     selDiff  = saveData.selDiff  || 'normal';
     selCareer= saveData.selCareer|| 'senator';
-    // Restore GS
     const restored = _saveObjToGs(saveData.gs);
     Object.assign(GS, restored);
-    // Re-hydrate non-serialisable items
     if(!(GS._uniqueActionsUsed instanceof Set)) GS._uniqueActionsUsed = new Set(GS._uniqueActionsUsed||[]);
     if(!(GS.targetedStates instanceof Set))    GS.targetedStates    = new Set(GS.targetedStates||[]);
     if(!Array.isArray(GS._recentActions))      GS._recentActions    = [];
     if(!GS.playerPartyLabel) GS.playerPartyLabel = GS.playerParty==='dem'?'Democratic':GS.playerParty==='rep'?'Republican':'Independent';
-    // Re-wire UI
+
+    // ── PRESIDENCY SAVE ──────────────────────────────────────────────────────
+    if(saveData.phase === 'first100' && saveData.p100){
+      closeSaveLoadModal();
+      const restored100 = JSON.parse(JSON.stringify(saveData.p100));
+      restored100._clockInterval = null;
+      restored100._pendingAI = false;
+      restored100._aiEvaluating = false;
+      window.P100 = restored100;
+      showScreen('first100-screen');
+      if(typeof window._p100RenderShell === 'function') window._p100RenderShell();
+      if(typeof window._p100StartClock === 'function') window._p100StartClock();
+      if(typeof window._p100RestoreEvent === 'function') setTimeout(()=>window._p100RestoreEvent(), 400);
+      else if(typeof window._p100ScheduleNextEvent === 'function') setTimeout(()=>window._p100ScheduleNextEvent(), 400);
+      _showLoadToast(`✅ Presidency save loaded — Day ${saveData.p100Day||'?'}`);
+      return true;
+    }
+
+    // ── CAMPAIGN SAVE ────────────────────────────────────────────────────────
     showScreen('game-screen');
     setupUI();
     const _nwBtn = document.querySelector('.next-week-btn');
     if(_nwBtn) _nwBtn.onclick = nextWeek;
     const _sumBtn = document.querySelector('#summary-modal .modal-btn.primary');
     if(_sumBtn) _sumBtn.onclick = closeSummary;
-    // Restore phase UI state
     if(GS.phase==='general'){
       document.getElementById('topbar-phase').textContent='General Election';
       document.getElementById('phase-primary').className='phase-step done';
@@ -10665,12 +10864,7 @@ function loadGame(slot){
     }
     renderAll();
     closeSaveLoadModal();
-    // Show confirmation toast
-    const toast = document.createElement('div');
-    toast.textContent = '✅ Game loaded successfully';
-    toast.style.cssText='position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1a2535;border:1px solid rgba(200,168,75,.4);color:#c8a84b;font-family:var(--font-mono);font-size:11px;padding:8px 16px;border-radius:6px;z-index:99999;pointer-events:none';
-    document.body.appendChild(toast);
-    setTimeout(()=>toast.remove(), 2200);
+    _showLoadToast('✅ Game loaded successfully');
     return true;
   } catch(e){
     console.error('Load failed:', e);
@@ -10695,6 +10889,8 @@ function getSaveInfo(slot){
       timestamp: d.timestamp,
       phase: d.phase,
       week: d.week,
+      p100Day: d.p100Day||null,
+      p100Phase: d.p100Phase||null,
       playerName: d.playerName,
       playerParty: d.playerParty,
       playerPartyLabel: d.playerPartyLabel||d.playerParty,
@@ -10723,11 +10919,44 @@ function closeSaveLoadModal(){
   if(modal) modal.style.display='none';
 }
 
+function _showLoadToast(msg){
+  const toast = document.createElement('div');
+  toast.textContent = msg;
+  toast.style.cssText='position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1a2535;border:1px solid rgba(200,168,75,.4);color:#c8a84b;font-family:var(--font-mono);font-size:11px;padding:8px 16px;border-radius:6px;z-index:99999;pointer-events:none';
+  document.body.appendChild(toast);
+  setTimeout(()=>toast.remove(), 2500);
+}
+
+// In-game confirm dialog — replaces native browser confirm()
+function showConfirmDialog(message, onConfirm, onCancel){
+  let overlay = document.getElementById('ingame-confirm-overlay');
+  if(!overlay){
+    overlay = document.createElement('div');
+    overlay.id = 'ingame-confirm-overlay';
+    overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:99000;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(3px)';
+    document.body.appendChild(overlay);
+  }
+  overlay.innerHTML=`
+    <div style="background:#10141c;border:1px solid #2a3348;border-radius:10px;padding:24px 28px;max-width:380px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.6)">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#c8a84b;letter-spacing:.15em;margin-bottom:12px">CONFIRM</div>
+      <div style="font-size:13px;color:#e8ecf4;line-height:1.6;margin-bottom:20px">${message}</div>
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button id="ingame-confirm-cancel" style="padding:8px 18px;background:transparent;border:1px solid #2a3348;border-radius:6px;color:#8a93a8;font-family:'IBM Plex Mono',monospace;font-size:11px;cursor:pointer" onmouseover="this.style.borderColor='#4a5568'" onmouseout="this.style.borderColor='#2a3348'">Cancel</button>
+        <button id="ingame-confirm-ok" style="padding:8px 18px;background:rgba(200,168,75,.15);border:1px solid rgba(200,168,75,.5);border-radius:6px;color:#c8a84b;font-family:'IBM Plex Mono',monospace;font-size:11px;cursor:pointer" onmouseover="this.style.background='rgba(200,168,75,.25)'" onmouseout="this.style.background='rgba(200,168,75,.15)'">Confirm</button>
+      </div>
+    </div>`;
+  overlay.style.display='flex';
+  const close = ()=>{ overlay.style.display='none'; };
+  document.getElementById('ingame-confirm-cancel').onclick=()=>{ close(); if(onCancel) onCancel(); };
+  document.getElementById('ingame-confirm-ok').onclick=()=>{ close(); if(onConfirm) onConfirm(); };
+}
+window.showConfirmDialog = showConfirmDialog;
+
 function renderSaveLoadModal(){
   const modal = document.getElementById('saveload-modal');
   if(!modal) return;
   const mode = modal._mode || 'save';
-  const isInGame = GS.phase==='primary'||GS.phase==='general';
+  const isInGame = GS.phase==='primary'||GS.phase==='general'||(typeof P100!=='undefined'&&P100&&P100.day);
   const autoInfo = getSaveInfo('auto');
 
   // Build slot rows
@@ -10741,7 +10970,7 @@ function renderSaveLoadModal(){
           <div style="font-family:var(--font-mono);font-size:10px;color:var(--text3);margin-bottom:2px">SLOT ${slot}</div>
           ${info
             ? `<div style="font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${info.playerName}</div>
-               <div style="font-family:var(--font-mono);font-size:9px;color:${partyColor}">${partyLabel} · ${info.phase==='primary'?'Primary':'General'} · Wk ${info.week}</div>
+               <div style="font-family:var(--font-mono);font-size:9px;color:${partyColor}">${partyLabel} · ${info.phase==='first100'?`Presidency · Day ${info.p100Day||'?'}`:info.phase==='primary'?'Primary':'General'} · ${info.phase==='first100'?(info.p100Phase||'transition').replace(/_/g,' '):`Wk ${info.week}`}</div>
                <div style="font-family:var(--font-mono);font-size:8px;color:var(--text3);margin-top:1px">${info.dateStr}</div>`
             : `<div style="font-family:var(--font-mono);font-size:11px;color:var(--text3);font-style:italic">Empty slot</div>`
           }
@@ -10756,7 +10985,7 @@ function renderSaveLoadModal(){
             : ''
           }
           ${info
-            ? `<button onclick="if(confirm('Delete this save?'))deleteSave(${slot})" style="padding:6px 8px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:5px;color:#f87171;font-family:var(--font-mono);font-size:10px;cursor:pointer" onmouseover="this.style.background='rgba(239,68,68,.18)'" onmouseout="this.style.background='rgba(239,68,68,.08)'">🗑</button>`
+            ? `<button onclick="showConfirmDialog('Delete this save slot?',()=>{deleteSave(${slot});})" style="padding:6px 8px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:5px;color:#f87171;font-family:var(--font-mono);font-size:10px;cursor:pointer" onmouseover="this.style.background='rgba(239,68,68,.18)'" onmouseout="this.style.background='rgba(239,68,68,.08)'">🗑</button>`
             : ''
           }
         </div>
@@ -10768,7 +10997,7 @@ function renderSaveLoadModal(){
       <div style="flex:1;min-width:0">
         <div style="font-family:var(--font-mono);font-size:10px;color:var(--accent);margin-bottom:2px">AUTO-SAVE</div>
         ${autoInfo
-          ? `<div style="font-size:12px;color:var(--text)">${autoInfo.playerName} · ${autoInfo.phase==='primary'?'Primary':'General'} Wk ${autoInfo.week}</div>
+          ? `<div style="font-size:12px;color:var(--text)">${autoInfo.playerName} · ${autoInfo.phase==='first100'?`Presidency Day ${autoInfo.p100Day||'?'}`:autoInfo.phase==='primary'?'Primary':'General'+' Wk '+autoInfo.week}</div>
              <div style="font-family:var(--font-mono);font-size:8px;color:var(--text3)">${autoInfo.dateStr}</div>`
           : `<div style="font-family:var(--font-mono);font-size:11px;color:var(--text3);font-style:italic">No auto-save yet</div>`
         }
@@ -10801,7 +11030,7 @@ function renderSaveLoadModal(){
 
 // ── Auto-save hook — called at end of every nextWeek ──
 function autoSaveGame(){
-  if(GS.phase==='primary'||GS.phase==='general') saveGame('auto');
+  if(GS.phase==='primary'||GS.phase==='general'||(typeof P100!=='undefined'&&P100&&P100.day)) saveGame('auto');
 }
 
 // ── Slider fill helper — keeps CSS gradient in sync with value ──

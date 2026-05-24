@@ -1513,46 +1513,18 @@ function finishElectionNight(){
     // Senate is already correct from individual race calls
     renderENCongressBoard();
     // Store final congress result on GS for end screen
-    // Compute coattail bonus based on breadth and margin of victory
-    const _deepCoattailBonus = (()=>{
-      if(!GS.states) return { senate: 0, house: 0 };
-      const _isIndFin = GS.playerParty === 'ind';
-      const playerIsDem = GS.playerParty === 'dem';
-      const playerEV = _isIndFin ? (EN.indPlayerEV||0) : (playerIsDem ? EN.demEV : EN.repEV);
-      const won = playerEV >= 270;
-      if(!won) return { senate: 0, house: 0 };
-
-      // Count competitive states flipped and overall winning margin
-      let statesWon = 0, statesTotal = GS.states.length || 1;
-      let swingFlipped = 0; // swing states won (big coattail signal)
-      let totalLead = 0;
-      GS.states.forEach(s => {
-        const lead = s.finalLead !== undefined ? s.finalLead : s.genLead;
-        if(lead > 0){
-          statesWon++;
-          totalLead += lead;
-          // Swing/hostile state won = meaningful coattail signal
-          const isSwing = Math.abs(s.lean) <= 12;
-          const isHostile = playerIsDem ? s.lean < -4 : s.lean > 4;
-          if(isSwing || isHostile) swingFlipped++;
-        }
-      });
-      const winShare = statesWon / statesTotal;
-      const avgLead  = totalLead / Math.max(statesWon, 1);
-      // Senate: each swing state flipped adds ~0.3 seats; landslide (>60% states) adds more
-      const senatBonus = Math.round(swingFlipped * 0.3 + (winShare > 0.6 ? (winShare - 0.6) * 8 : 0));
-      // House: swing flips are worth ~3 seats each; avg margin also matters
-      const houseBonus = Math.round(swingFlipped * 3 + (playerEV - 270) / 25 + avgLead * 0.3);
-      return { senate: Math.max(0, senatBonus), house: Math.max(0, houseBonus) };
-    })();
+    // Use the election-night tallied senate seats and predetermined house wave result directly.
+    // The senate dem/rep counts already reflect envBonus coattails via _resolveCongressRace().
+    // The house finalDem/finalRep already reflect the wave via waveSeatShift + compSwing.
+    // No additional bonus is applied — it was double-counting and producing impossible totals.
     GS._congressResult = {
       senate: {
-        dem: _enCongress.senate.dem + (GS.playerParty==='dem' ? _deepCoattailBonus.senate : 0),
-        rep: _enCongress.senate.rep + (GS.playerParty==='rep' ? _deepCoattailBonus.senate : 0)
+        dem: Math.min(_enCongress.senate.dem, 100 - _enCongress.senate.rep),
+        rep: Math.min(_enCongress.senate.rep, 100 - _enCongress.senate.dem)
       },
       house: {
-        dem: _enCongress.house.dem + (GS.playerParty==='dem' ? _deepCoattailBonus.house : 0),
-        rep: _enCongress.house.rep + (GS.playerParty==='rep' ? _deepCoattailBonus.house : 0)
+        dem: _enCongress.house.finalDem,
+        rep: _enCongress.house.finalRep
       },
     };
   }
@@ -1935,6 +1907,11 @@ function showBreakdownScreen(won, pEV, oEV){
       </div>`;
     })()}
   `;
+  // Show/hide the First 100 Days button based on whether the player won
+  const _p100btn = document.getElementById('bk-presidency-btn');
+  const _p100sub = document.getElementById('bk-presidency-sub');
+  if(_p100btn) _p100btn.style.display = won ? 'flex' : 'none';
+  if(_p100sub) _p100sub.style.display = won ? 'block' : 'none';
 }
 
 function buildENMap(){

@@ -89,7 +89,7 @@ const SITUATION_POOL = {
       advisorVoice:'press_sec', advisorLine:'They are going to write this story with or without us. What do you want to say?' },
     { id:'t5', headline:'Senate Ally Demands Concession on Cabinet',
       brief:'Senator Rodriguez — whose vote you need for three confirmations — is privately demanding you drop a specific cabinet nominee she calls unconfirmable. She has four other senators in her pocket. Your Chief of Staff flagged this at breakfast. She wants an answer by 3pm.',
-      advisorVoice:'chief_of_staff', advisorLine:'She has the votes. But giving in sets a precedent for every confirmation to come. What is the call?' },
+      advisorVoice:'chief_of_staff', advisorLine:'They have the votes. But giving in sets a precedent for every confirmation to come. What is the call?' },
     { id:'t6', headline:'Inaugural Address: Final Revisions Due Tonight',
       brief:'Your speechwriters have a draft. Your communications director loves it. Your VP thinks it is too bold. 45 million people will watch. The address in four days will define expectations for everything that follows. You have final edit authority and they need direction tonight.',
       advisorVoice:'press_sec', advisorLine:'It is your words, Mr. President. What is the central message you want Americans to carry with them?' },
@@ -105,8 +105,8 @@ const SITUATION_POOL = {
       brief:'The briefing room is full for your first presidential press conference. You can see four correspondents who filed hostile pieces this week. Your Press Secretary is warming up the room. You have sixty seconds before you walk out. There is no script — just you.',
       advisorVoice:'press_sec', advisorLine:'Reuters has a question on the intelligence leak. Trade desk is going after tariffs. How do you want to handle the hostile ones?' },
     { id:'f4', headline:'Opposition Leader Wants a Private Meeting',
-      brief:'The Senate Minority Leader has privately requested an Oval Office meeting — no cameras, no staff, just the two of you. Intelligence says she is considering crossover support on two of your agenda priorities. But she will want something significant in return.',
-      advisorVoice:'vp', advisorLine:'She would not ask for this meeting unless she wanted to deal. What are you willing to give?' },
+      brief:'The Senate Minority Leader has privately requested an Oval Office meeting — no cameras, no staff, just the two of you. Intelligence says they are considering crossover support on two of your agenda priorities. But they will want something significant in return.',
+      advisorVoice:'vp', advisorLine:'They would not ask for this meeting unless they wanted to deal. What are you willing to give?' },
     { id:'f5', headline:'Key Ally Requests US Military Presence',
       brief:'South Korea formally requested increased US military presence in response to three consecutive missile tests. Joint Chiefs says it is operationally feasible within 72 hours. State says approve it. Treasury says it will cost $2.3 billion in the current fiscal year.',
       advisorVoice:'nsc_advisor', advisorLine:'Seoul is counting on a response. What is your answer?' },
@@ -125,8 +125,8 @@ const SITUATION_POOL = {
       brief:'Four progressive members of your party announced they are voting against your healthcare bill unless the public option is fully restored. Without them you lose the House. With them you lose three centrists. You have a call with the caucus chair in ten minutes.',
       advisorVoice:'vp', advisorLine:'You cannot have both. What do you tell the caucus chair?' },
     { id:'l4', headline:'Infrastructure Deal — Bipartisan Path Requires a Concession',
-      brief:'The ranking member of the Infrastructure Committee reached out privately. She will bring five crossover votes for your $1.2 trillion package if you drop the clean energy provision and publicly credit the bipartisan effort. Your base will call it a betrayal. But the deal closes today or it dies.',
-      advisorVoice:'chief_of_staff', advisorLine:'She has the votes. But this is a real concession. What do you want to do?' },
+      brief:'The ranking member of the Infrastructure Committee reached out privately. They will bring five crossover votes for your $1.2 trillion package if you drop the clean energy provision and publicly credit the bipartisan effort. Your base will call it a betrayal. But the deal closes today or it dies.',
+      advisorVoice:'chief_of_staff', advisorLine:'They have the votes. But this is a real concession. What do you want to do?' },
     { id:'l5', headline:'Tax Package Deadlocked in Conference Committee',
       brief:'The House and Senate tax package versions are irreconcilable at the committee level. The conference committee deadlock has landed on your desk. Both sides are waiting for you to break the stalemate. Whatever version you back, someone in your coalition will be furious.',
       advisorVoice:'econ_advisor', advisorLine:'Conference is gridlocked. This one is yours to solve.' },
@@ -197,12 +197,119 @@ function initFirst100Days() {
   const ln=['Harrison','Mitchell','Chen','Rodriguez','Williams','Patel','Thompson','Anderson','Garcia','Kim','Okafor','Vasquez','Brooks','Jensen','Nakamura','Reeves','Osei'];
   const genName=()=>`${fn[Math.floor(Math.random()*fn.length)]} ${ln[Math.floor(Math.random()*ln.length)]}`;
 
+  // Role-specific bio pools: [safe bios array, controversial bios array]
+  const ROLE_BIOS={
+    'Secretary of State':{
+      safe:[
+        `Career diplomat with 30 years at the State Department and four ambassadorships. Widely respected on both sides of the aisle. The Senate Foreign Relations Committee chair personally called to endorse this pick.`,
+        `Former Deputy National Security Advisor who negotiated two landmark trade agreements. Known for quiet effectiveness — Senate allies describe them as "impossible to oppose in public."`,
+        `Retired four-star general turned diplomat. Ran the NATO liaison office for six years and is personally known to 22 allied heads of state. A rare safe pick in a polarized town.`,
+      ],
+      controversial:[
+        `Brilliant but polarising former UN Ambassador who clashed publicly with three allied governments. Hawkish on China and Russia. Will confirm on party-line vote — then shape foreign policy like few predecessors.`,
+        `Academic turned ideologue who advised the campaign on an "America First" diplomatic reset. Progressive critics call the pick "reckless." Conservatives in your party quietly love it.`,
+        `Billionaire tech CEO with zero diplomatic experience but massive campaign donor history. Opposition will call it a scandal. Allies privately admit the intelligence and drive are real.`,
+      ]
+    },
+    'Secretary of the Treasury':{
+      safe:[
+        `Former Federal Reserve Vice Chair with a doctorate in macroeconomics and 20 years of bipartisan credibility. Wall Street immediately calmed after rumours of the pick leaked.`,
+        `Two-term state governor who turned a $4B deficit into a surplus without raising income taxes. Moderate record will attract crossover Senate votes.`,
+        `Career investment banker who served as Treasury Under-Secretary under both parties. Bland but unimpeachable. Markets will rally on the announcement.`,
+      ],
+      controversial:[
+        `Heterodox economist and vocal critic of the Fed who has called for restructuring the central bank. Wall Street is furious. The base is electrified. Markets have already dropped 0.6%.`,
+        `Crypto entrepreneur worth $12B who has argued for abolishing capital gains tax entirely. Fiscal hawks love it. Progressive caucus is threatening a floor fight.`,
+        `Former hedge fund manager with a settled SEC inquiry on their record. The inquiry was dropped, but opposition research has already reached the press. A confirmation battle is guaranteed.`,
+      ]
+    },
+    'Secretary of Defense':{
+      safe:[
+        `Retired four-star general who commanded US forces in Europe and co-authored the Pentagon's last major modernisation review. Joint Chiefs requested this pick directly.`,
+        `Former Deputy Defense Secretary with 15 years running procurement and acquisitions. Not glamorous, but the military establishment will confirm quietly and efficiently.`,
+        `Two-tour combat veteran and former Armed Services Committee chair. Respected across the entire Senate. This pick signals continuity and seriousness to allies.`,
+      ],
+      controversial:[
+        `Civilian defence contractor CEO who wants to cut $200B from legacy weapons programmes and go all-in on autonomous systems. The Pentagon brass is openly alarmed. Silicon Valley is celebrating.`,
+        `Former National Security Advisor who advocated pre-emptive strikes in three separate classified memos. Allies are nervous. Your hawkish base is calling it a masterstroke.`,
+        `Decorated combat general with a documented history of insubordination toward civilian leadership. The last SecDef fired them. They are, by every account, the sharpest strategic mind in a generation.`,
+      ]
+    },
+    'Attorney General':{
+      safe:[
+        `Former federal appeals judge with a universally praised record on civil liberties and law enforcement. The American Bar Association rated them "exceptionally well qualified."`,
+        `State Attorney General who won re-election three times in a swing state. Prosecutorial record is clean, bipartisan, and boring — in exactly the right way.`,
+        `DOJ veteran with 28 years of experience across six administrations. Low profile, deep relationships, zero ethics concerns. Senate Judiciary Committee chair privately blessed the pick.`,
+      ],
+      controversial:[
+        `Firebrand prosecutor who ran on investigating the previous administration and has made no secret of the agenda. Opponents call it weaponising justice. The base calls it accountability.`,
+        `Corporate defence lawyer who represented three Fortune 500 companies in antitrust cases the DOJ brought. Opponents say it's a conflict of interest. Allies say it signals pro-business reform.`,
+        `Civil rights attorney who has sued local police departments in 14 states. Law enforcement unions are mobilising against the nomination. Progressive groups have donated $8M to the confirmation campaign.`,
+      ]
+    },
+    'Sec. Health & Human Services':{
+      safe:[
+        `Former state health secretary who managed a Medicaid expansion for 3.2 million people with bipartisan support. A technocrat with genuine public health credentials and no political baggage.`,
+        `Paediatrician and former hospital system CEO who worked across party lines on the opioid crisis. Personally popular in the Senate — three Republicans have already publicly endorsed.`,
+        `Public health professor who ran the CDC's emergency response division during the last pandemic. Quiet competence in a role that demands it.`,
+      ],
+      controversial:[
+        `Outspoken critic of pharmaceutical pricing who has promised price controls by executive order within 60 days. PhRMA has already launched a $30M opposition campaign.`,
+        `Anti-vaccine-sceptic figure with a history of questioning several standard immunisation schedules. Public health community is alarmed. A segment of your base views them as a hero.`,
+        `Tech entrepreneur proposing to "disrupt" Medicaid with a blockchain-based benefits system. Experts are divided between genuine innovation and dangerous experiment.`,
+      ]
+    },
+    'Chief of Staff':{
+      safe:[
+        `Veteran campaign manager who has run three winning presidential campaigns and is feared and respected in equal measure throughout Washington. The West Wing will run like a machine.`,
+        `Former Senate Majority Whip who knows every vote, every favour, and every fault line on Capitol Hill. Boring choice. Brilliant choice.`,
+        `Deputy Chief of Staff in the last administration of your party with deep relationships across the Cabinet and press corps. A stabilising force from day one.`,
+      ],
+      controversial:[
+        `Ideological firebrand from the campaign's inner circle with zero government experience. Loyal, brilliant, and has already made three enemies in the transition. The press will call it chaos.`,
+        `Billionaire donor and close personal friend with no prior government role. The Senate has no confirmation vote — this is entirely yours to own.`,
+        `Former talk-show host turned political operative who engineered three surprise congressional victories. The establishment is horrified. Your media strategy will be unlike anything Washington has seen.`,
+      ]
+    },
+    'CIA Director':{
+      safe:[
+        `Career intelligence officer who rose to Deputy Director over 27 years. The Intelligence Community requested this pick. Senate Intelligence Committee will confirm with minimal friction.`,
+        `Former NSA Director with a strong record on cybersecurity and a reputation for protecting sources above political pressure. Allies abroad are relieved.`,
+        `Retired three-star general and former DIA chief. Not the most imaginative pick — but in intelligence, boring and competent saves lives.`,
+      ],
+      controversial:[
+        `Tech billionaire with access to the world's most powerful private intelligence infrastructure. The intelligence community is deeply alarmed. The argument for: unprecedented resources and reach.`,
+        `Former Congressman who publicly called for "radical restructuring" of CIA field operations and has been outspoken about surveillance overreach. Will face a brutal confirmation.`,
+        `Academic who has published research critical of CIA covert operations in three allied nations. The agency's career staff are already briefing against the nomination off the record.`,
+      ]
+    },
+    'Sec. Homeland Security':{
+      safe:[
+        `Former FEMA director who managed two Category 5 hurricane responses and earned rare bipartisan praise. Operational credibility from day one.`,
+        `Two-term border state governor who built a bipartisan record on immigration enforcement and disaster response. Senate colleagues trust and respect the track record.`,
+        `Former CBP Commissioner who reduced border incidents by 30% while working within a bipartisan framework. Pragmatic and processional — exactly what DHS needs.`,
+      ],
+      controversial:[
+        `Hard-liner who has called for the largest deportation operation in US history and says the current border is "an invasion." Opponents are already fundraising against. Your base is energised.`,
+        `Tech entrepreneur proposing to privatise TSA and automate 60% of border monitoring. Civil liberties groups are mobilising. Libertarian wing of your party is enthusiastic.`,
+        `Former ICE director who was fired by the previous administration for exceeding their mandate. Opponents call them dangerous. Allies call the firing political and the record exemplary.`,
+      ]
+    },
+  };
+
   const cabinet = CABINET_ROLES.map(r=>{
-    const controversial=Math.random()<0.3;
     const pSen=pIsDem?senateDem:senateRep;
-    const senFor=controversial?Math.min(57,Math.max(44,pSen+Math.floor(Math.random()*8)-4)):Math.min(88,Math.max(62,pSen+Math.floor(Math.random()*18)));
-    const bios=[`Former ${['governor','senator','CEO','general','diplomat'][Math.floor(Math.random()*5)]} with deep policy expertise.`,`Veteran ${party} ally with broad Senate relationships and strong credentials.`,`Respected technocrat known for cross-aisle deal-making.`,`High-profile pick with strong record and a polarising public history.`];
-    return{...r,name:genName(),bio:bios[Math.floor(Math.random()*bios.length)],controversial,senateFor:senFor,senateAgainst:100-senFor,confirmed:false,resolved:false};
+    const bioPool=ROLE_BIOS[r.role]||{safe:[`Former senior official with deep policy expertise and bipartisan credibility.`],controversial:[`High-profile pick with strong views that will trigger a Senate battle.`]};
+    const makeCand=(controversial)=>{
+      const senFor=controversial?Math.min(57,Math.max(44,pSen+Math.floor(Math.random()*8)-4)):Math.min(88,Math.max(62,pSen+Math.floor(Math.random()*18)));
+      const pool=controversial?bioPool.controversial:bioPool.safe;
+      const bio=pool[Math.floor(Math.random()*pool.length)];
+      return{name:genName(),bio,controversial,senateFor:senFor,senateAgainst:100-senFor};
+    };
+    // Always two candidates: one safe, one higher-risk
+    const candA=makeCand(false);
+    const candB=makeCand(Math.random()<0.6);
+    return{...r,candidates:[candA,candB],confirmed:false,resolved:false,chosenCandidate:null};
   });
 
   const actors={};
@@ -216,12 +323,28 @@ function initFirst100Days() {
   const baseApproval=evLine==='landslide'?59:evLine==='strong'?54:evLine==='narrow'?50:47;
   const govBonus=(pIsDem?senateDem>=51:senateRep>=51)?3:0;
 
+  // Capture campaign backstory for personalised AI prompts
+  const _bs = GS?.backstory || {};
+  const careerLabels100 = {senator:'U.S. Senator',house:'House Rep.',governor:'Governor',mayor:'Mayor',
+    military:'General',prosecutor:'Prosecutor',business:'Business Leader',academic:'Academic',
+    activist:'Activist',diplomat:'Diplomat',celebrity:'Celebrity',outsider:'Outsider'};
+  const playerCareerLabel = careerLabels100[_bs.career||'senator'] || 'Senator';
+  const playerIdeologyDesc = _bs.ideologyDesc || (_bs.ideology>65?'progressive':_bs.ideology<35?'conservative':'moderate');
+  const playerSlogan = _bs.slogan || '';
+  const playerMoment = _bs.momentText || 'a record of public service';
+  const campaignPolicies = (GS?.newsItems||[]).filter(n=>n.tag==='campaign').slice(-3).map(n=>n.hl).join('; ') || '';
+
   P100={
     playerName:name, lastName, playerPartyLabel:party, playerParty:GS?.playerParty??'dem',
     finalEV:ev, mandate:evLine,
+    // Campaign backstory fields — used by AI prompts for personalisation
+    career: playerCareerLabel,
+    ideology: playerIdeologyDesc,
+    slogan: playerSlogan,
+    campaignMoment: playerMoment,
     senate:{dem:senateDem,rep:senateRep}, house:{dem:houseDem,rep:houseRep},
     playerSenate:pIsDem?senateDem:senateRep, playerHouse:pIsDem?houseDem:houseRep,
-    hasSenate:(pIsDem?senateDem:senateRep)>=51, hasHouse:(pIsDem?houseDem:houseRep)>=218,
+    hasSenate:(pIsDem?senateDem:senateRep)>=(pIsDem?50:51), hasHouse:(pIsDem?houseDem:houseRep)>=218,
     filibusterProof:(pIsDem?senateDem:senateRep)>=60,
     unifiedGov:false, dividedGov:false,
     stats:{economy:52,foreignPolicy:48,healthcare:48,nationSecurity:50,mediaRelations:50},
@@ -282,7 +405,7 @@ function _showWelcomeOverlay() {
         <div style="background:#10141c;border:1px solid #1e2535;border-radius:8px;padding:12px;text-align:center">
           <div style="font-family:'IBM Plex Mono',monospace;font-size:8px;color:#c8a84b;letter-spacing:.1em;margin-bottom:4px">SENATE</div>
           <div style="font-size:14px;font-family:'IBM Plex Mono',monospace"><b style="color:#3b82f6">${P100.senate.dem}D</b> – <b style="color:#ef4444">${P100.senate.rep}R</b></div>
-          <div style="font-size:10px;color:${P100.hasSenate?'#22c55e':'#ef4444'};margin-top:2px">${P100.hasSenate?'MAJORITY':'MINORITY'}</div>
+          <div style="font-size:10px;color:${P100.hasSenate?'#22c55e':'#ef4444'};margin-top:2px">${P100.senate.dem===50&&P100.senate.rep===50&&P100.playerParty==='dem'?'MAJORITY (VP TIEBREAK)':P100.hasSenate?'MAJORITY':'MINORITY'}</div>
         </div>
         <div style="background:#10141c;border:1px solid #1e2535;border-radius:8px;padding:12px;text-align:center">
           <div style="font-family:'IBM Plex Mono',monospace;font-size:8px;color:#c8a84b;letter-spacing:.1em;margin-bottom:4px">HOUSE</div>
@@ -341,7 +464,13 @@ window.p100CommitAgenda=function(){
   _recalcApproval();
   document.getElementById('p100-welcome-overlay')?.remove();
   _renderShell();
-  setTimeout(_scheduleNextEvent,400);
+  // Always start the first event immediately
+  setTimeout(_scheduleNextEvent, 400);
+  // Show tutorial overlay on top (non-blocking — game runs underneath)
+  if(!sessionStorage.getItem('p100TutShown')){
+    setTimeout(()=>window.p100ShowTutorial(false), 800);
+    sessionStorage.setItem('p100TutShown','1');
+  }
 };
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -488,44 +617,59 @@ function _statDescription(statId,val){
 }
 
 function _renderSenateCircles(){
-  // Build a 10×10 grid of circles (100 seats) representing the Senate
+  // Semi-circle arc: 100 seats arranged in 5 arcs radiating outward
   const dem=P100.senate.dem, rep=P100.senate.rep;
   const playerIsDem=P100.playerParty==='dem';
-  const playerDem=dem, playerRep=rep;
-  // Sort: Dem seats left, Rep seats right
-  const circles=[];
-  for(let i=0;i<100;i++){
-    const isDem=i<dem;
-    const isPlayer=(isDem&&playerIsDem)||(!isDem&&!playerIsDem);
-    circles.push({isDem,isPlayer});
-  }
-  // Render 10 rows × 10 cols, left=Dem, right=Rep
-  const rows=10,cols=10;
-  let svg=`<svg viewBox="0 0 108 60" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block">`;
-  for(let r=0;r<rows;r++){
-    for(let c=0;c<cols;c++){
-      const idx=r*cols+c; // left-to-right, top-to-bottom
-      // Map cols so Dem seats fill from left, Rep from right
-      // Actually: fill seats left→right for Dem, then Rep continues
-      const seat=circles[idx];
-      const cx=5+c*11, cy=4+r*5.5;
-      const fill=seat.isDem?'#3b82f6':'#ef4444';
-      const opacity=seat.isPlayer?'1':'0.55';
-      svg+=`<circle cx="${cx}" cy="${cy}" r="3.8" fill="${fill}" opacity="${opacity}"/>`;
+  const W=360, H=185, cx=W/2, cy=H-10;
+  const rowCounts=[16,18,20,22,24];
+  const rStart=44, rStep=16;
+  let seats=[];
+  for(let row=0;row<5;row++){
+    const n=rowCounts[row];
+    const r=rStart+row*rStep;
+    for(let i=0;i<n;i++){
+      const angle=Math.PI-(i/(n-1))*Math.PI;
+      seats.push({x:cx+r*Math.cos(angle),y:cy-r*Math.sin(angle)});
     }
   }
-  // Majority line at seat 50 (between cols 9-10 of row containing seat 50)
-  // Seat 50 = row 5, col 0 → x=5. The boundary between 50D/50R
-  // For the majority marker, draw a vertical line between col 4 and 5 of any row,
-  // adjusted for actual split. 50 seats each = boundary after col 4/5 in row 5.
-  const splitRow=Math.floor(dem/cols), splitCol=dem%cols;
-  const markerX=5+splitCol*11;
-  if(dem!==100&&dem!==0){
-    const markerY=4+splitRow*5.5;
-    svg+=`<line x1="${markerX-1.5}" y1="${markerY-4}" x2="${markerX-1.5}" y2="${markerY+9}" stroke="#c8a84b" stroke-width="1.2" stroke-dasharray="1.5,1"/>`;
-  }
+  seats.sort((a,b)=>a.x-b.x);
+  let svg=`<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:380px;height:auto;display:block;margin:0 auto">`;
+  svg+=`<line x1="${cx}" y1="4" x2="${cx}" y2="${cy-11}" stroke="#c8a84b" stroke-width="1" stroke-dasharray="3,2" opacity="0.5"/>`;
+  seats.forEach((s,i)=>{
+    const isDem=i<dem;
+    const fill=isDem?'#3b82f6':'#ef4444';
+    const isPlayer=(isDem&&playerIsDem)||(!isDem&&!playerIsDem);
+    svg+=`<circle cx="${s.x.toFixed(1)}" cy="${s.y.toFixed(1)}" r="4.0" fill="${fill}" opacity="${isPlayer?'1':'0.45'}"/>`;
+  });
+  svg+=`<text x="${cx}" y="${H-2}" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="10" fill="#c8a84b" opacity="0.7">50 — MAJORITY</text>`;
   svg+=`</svg>`;
   return svg;
+}
+
+function _renderSenateSummaryInline(){
+  const dem=P100.senate.dem, rep=P100.senate.rep;
+  const playerIsDem=P100.playerParty==='dem';
+  const playerSeats=playerIsDem?dem:rep;
+  const hasMaj=playerSeats>=(playerIsDem?50:51), hasSuperMaj=playerSeats>=60;
+  const vpTie=dem===50&&rep===50&&playerIsDem;
+  const majColor=hasSuperMaj?'#22c55e':hasMaj?'#c8a84b':'#ef4444';
+  const majLabel=hasSuperMaj?'SUPERMAJORITY':vpTie?'MAJORITY (VP TIEBREAK)':hasMaj?'MAJORITY':'MINORITY';
+  return `<div style="margin-top:14px;padding:14px 16px;background:#0a0c10;border:1px solid #1e2535;border-radius:8px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:#4a5568;letter-spacing:.12em">U.S. SENATE</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:8px;color:${majColor};letter-spacing:.08em;padding:1px 6px;border:1px solid ${majColor}44;border-radius:3px">${majLabel}</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;color:#3b82f6">${dem}<span style="font-size:9px;color:#4a5568;font-weight:400"> DEM</span></span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;color:#ef4444">${rep}<span style="font-size:9px;color:#4a5568;font-weight:400"> REP</span></span>
+    </div>
+        <div style="margin-top:4px">${_renderSenateCircles()}</div>
+    <div style="display:flex;gap:12px;margin-top:6px;font-family:'IBM Plex Mono',monospace;font-size:8px;color:#4a5568">
+      <span><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#3b82f6;margin-right:3px;vertical-align:middle"></span>Democrat</span>
+      <span><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#ef4444;margin-right:3px;vertical-align:middle"></span>Republican</span>
+      <span style="margin-left:auto">51 = majority · 60 = filibuster-proof</span>
+    </div>
+  </div>`;
 }
 
 function _renderActorPanel(){
@@ -537,20 +681,6 @@ function _renderActorPanel(){
   const majColor=hasSuperMaj?'#22c55e':hasMaj?'#c8a84b':'#ef4444';
   const majLabel=hasSuperMaj?'SUPERMAJORITY':hasMaj?'MAJORITY':'MINORITY';
   el.innerHTML=`
-    <div class="p100-panel-title">U.S. SENATE</div>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
-      <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;color:#3b82f6">${dem}<span style="font-size:9px;color:#4a5568"> DEM</span></span>
-      <span style="font-family:'IBM Plex Mono',monospace;font-size:8px;color:${majColor};letter-spacing:.08em;padding:1px 5px;border:1px solid ${majColor}44;border-radius:3px">${majLabel}</span>
-      <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;color:#ef4444">${rep}<span style="font-size:9px;color:#4a5568"> REP</span></span>
-    </div>
-    <div style="margin-bottom:10px;background:#0a0c10;border-radius:5px;padding:4px 3px;border:1px solid #1e2535" title="${dem} Democratic seats · ${rep} Republican seats · Need 51 for majority · 60 for filibuster-proof">
-      ${_renderSenateCircles()}
-    </div>
-    <div style="display:flex;gap:8px;margin-bottom:10px;font-family:'IBM Plex Mono',monospace;font-size:9px">
-      <span style="display:flex;align-items:center;gap:3px"><span style="width:8px;height:8px;border-radius:50%;background:#3b82f6;display:inline-block"></span>Democrat</span>
-      <span style="display:flex;align-items:center;gap:3px"><span style="width:8px;height:8px;border-radius:50%;background:#ef4444;display:inline-block"></span>Republican</span>
-      <span style="color:#4a5568">│ 51 = majority · 60 = filibuster-proof</span>
-    </div>
     <div class="p100-panel-title" style="margin-bottom:4px">RELATIONSHIPS <span style="font-size:8px;color:#2a3348;font-weight:400;letter-spacing:.05em">click for detail</span></div>
     ${WORLD_ACTORS.map(a=>{
       const trust=P100.actors[a.id];const color=trust>=60?'#22c55e':trust>=40?'#c8a84b':'#ef4444';
@@ -738,15 +868,15 @@ function _renderBriefing(){
           oninput="p100OnResponseInput(this)"
           onkeydown="if((event.ctrlKey||event.metaKey)&&event.key==='Enter')p100SubmitResponse()"></textarea>
         <div class="p100-suggestions" id="p100-suggestions-bar">
-          <span class="p100-suggestions-label">STARTING POINTS</span>
-          <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:#2a3348;letter-spacing:.05em;display:flex;align-items:center;gap:5px" id="p100-ai-sug-loading"><span style="width:10px;height:10px;border:1.5px solid #2a3348;border-top-color:#c8a84b;border-radius:50%;animation:spin 1s linear infinite;display:inline-block;flex-shrink:0"></span>AI thinking…</span>
-          ${fallbackSuggestions.map((s,i)=>`<button class="p100-suggestion-chip" data-sug-idx="${i}" onclick="p100UseSuggestion(this,'${s.replace(/'/g,"&#39;")}')">${s}</button>`).join('')}
+          <span class="p100-suggestions-label" style="color:#c8a84b">🤖 AI STARTING POINTS</span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:#4a5568;letter-spacing:.05em;display:flex;align-items:center;gap:5px" id="p100-ai-sug-loading"><span style="width:10px;height:10px;border:1.5px solid #2a3348;border-top-color:#c8a84b;border-radius:50%;animation:spin 1s linear infinite;display:inline-block;flex-shrink:0"></span>Generating options…</span>
         </div>
         <button id="p100-submit-btn" class="p100-submit-btn" onclick="p100SubmitResponse()" disabled style="opacity:.4;cursor:not-allowed">
           DELIVER YOUR RESPONSE <span style="opacity:.6;font-size:11px;margin-left:8px">Ctrl+Enter</span>
         </button>
       </div>
-    </div>`;
+    </div>
+    ${_renderSenateSummaryInline()}`;
 
   setTimeout(()=>document.getElementById('p100-response-input')?.focus(),100);
 
@@ -779,13 +909,6 @@ function _renderBriefing(){
         btn.addEventListener('click',function(){p100UseSuggestionEl(this);});
         frag.appendChild(btn);
       });
-      const divider=document.createElement('span');
-      divider.style.cssText='display:block;width:100%;height:1px;background:#1e2535;margin:2px 0';
-      frag.appendChild(divider);
-      const orLabel=document.createElement('span');
-      orLabel.className='p100-suggestions-label';
-      orLabel.textContent='OR';
-      frag.appendChild(orLabel);
       loadEl.replaceWith(frag);
     } else {
       if(loadEl)loadEl.remove();
@@ -806,6 +929,8 @@ function _isUsableSuggestion(s){
   if(chars>20&&words<2)return false;
   return true;
 }
+
+async function _fetchAISuggestions(sit, phase, adv){
   const prompt=`You are briefing the US President in a political simulation. Generate 3 very short, distinct response starter phrases the President could use for this situation.
 
 Situation: ${sit.headline}
@@ -836,19 +961,6 @@ Return ONLY valid JSON: {"suggestions":["phrase one","phrase two","phrase three"
         // fallback: split by newlines/bullets
         const lines=advText.split(/[\n•\-\d\.]+/).map(l=>_fixAISpacing(l.trim())).filter(_isUsableSuggestion);
         if(lines.length>=2)return lines.slice(0,3);
-      }
-    }catch(_){}
-  }
-  // Cloud worker
-  if(window._POTUS_AI_WORKER_URL){
-    try{
-      const res=await fetch(window._POTUS_AI_WORKER_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt,suggestions:true}),signal:AbortSignal.timeout(8000)});
-      if(res.ok){
-        const data=await res.json();
-        let raw=data.suggestions||data.advice||data.text;
-        if(typeof raw==='string')raw=_parseJSONFromText(raw);
-        if(raw?.suggestions?.length){const good=raw.suggestions.slice(0,3).map(_fixAISpacing).filter(_isUsableSuggestion);if(good.length>=2)return good;}
-        if(Array.isArray(raw)){const good=raw.slice(0,3).map(_fixAISpacing).filter(_isUsableSuggestion);if(good.length>=2)return good;}
       }
     }catch(_){}
   }
@@ -892,9 +1004,22 @@ window.p100SubmitResponse=function(){
 // ══════════════════════════════════════════════════════════════════════════════
 async function _evaluatePresidentialResponse(response){
   const el=document.getElementById('p100-event-area');if(!el)return;
+  if(P100._aiEvaluating)return; // guard against double-submit while AI is working
   P100._aiEvaluating=true;
-  const respArea=document.getElementById('p100-response-area');
+  // Show spinner — for milestone cards without p100-response-area, show in the step2 area or event-area
+  const respArea=document.getElementById('p100-response-area')
+    || document.getElementById('p100-joint-step2')
+    || document.getElementById('p100-event-area');
   if(respArea){respArea.innerHTML=`<div class="p100-evaluating-block"><div class="p100-eval-spinner"></div><div class="p100-eval-label">Evaluating your decision…</div><div class="p100-eval-quote">"${response.length>120?response.slice(0,120)+'…':response}"</div></div>`;}
+  // Emergency escape: if spinner is still showing after 30s (AI hung), force procedural result
+  const _spinnerEscapeTimer=setTimeout(()=>{
+    if(P100._aiEvaluating){
+      console.warn('[P100] Evaluation timeout — forcing procedural result');
+      P100._aiEvaluating=false;
+      (window._applyEvaluationResult||_applyEvaluationResult)(_proceduralEvaluate(response,P100._currentSituation||{headline:''},_currentPhase()),response);
+    }
+  },30000);
+  {const sit_ctx=P100._currentSituation;const ctx=sit_ctx?`${sit_ctx.headline}. President ${P100.playerName} responded: "${response.slice(0,100)}"`:response;_generateXFeedPosts(ctx);}
 
   const sit=P100._currentSituation;
   const phase=_currentPhase();
@@ -905,7 +1030,8 @@ async function _evaluatePresidentialResponse(response){
 
   const prompt=`You are a senior political analyst evaluating a presidential decision in a political simulation.
 
-PRESIDENT: ${P100.playerName} (${P100.playerPartyLabel})
+PRESIDENT: ${P100.playerName} (${P100.playerPartyLabel}) — former ${P100.career||"Senator"} (now President — address as President only), ${P100.ideology||"moderate"}
+CAMPAIGN: ${P100.slogan?"Slogan: \""+P100.slogan+"\"":""} ${P100.campaignMoment?"| Background: "+P100.campaignMoment:""}
 DAY: ${P100.day} of 100 | PHASE: ${phase.label}
 APPROVAL: ${P100.approvalRating}% | MANDATE: ${P100.finalEV} electoral votes
 CONGRESS: ${govCtx} — Senate ${P100.senate.dem}D/${P100.senate.rep}R, House ${P100.house.dem}D/${P100.house.rep}R
@@ -939,19 +1065,26 @@ Rules: effects integers -14 to +14. approvalDelta integer -10 to +10. actorShift
 
   let result=null;
 
-  if(window.isElectron&&window.localAI){
-    try{const raw=await window.localAI.respond(prompt);if(raw?.outcome&&raw?.effects)result=raw;}catch(_){}
-  }
-  if(!result&&window._POTUS_AI_WORKER_URL){
-    try{
-      const res=await fetch(window._POTUS_AI_WORKER_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt,first100:true,respond:true}),signal:AbortSignal.timeout(12000)});
-      if(res.ok){const data=await res.json();let raw=data.respond||data.evaluation||data.text;if(typeof raw==='string')raw=JSON.parse(raw.replace(/```json|```/g,'').trim());if(raw?.outcome&&raw?.effects)result=raw;}
-    }catch(_){}
-  }
-  if(!result)result=_proceduralEvaluate(response,sit,phase);
+  // Helper: race AI call against a 25s timeout to prevent permanent hang
+  const _withTimeout=(p,ms)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),ms))]);
 
-  P100._aiEvaluating=false;
-  _applyEvaluationResult(result,response);
+  try{
+    if(window.isElectron&&window.localAI){
+      try{
+        // Use getAdvice (lighter channel) instead of respond to avoid OOM on large KV cache allocation
+        const advText=await _withTimeout(window.localAI.getAdvice(prompt),25000);
+        if(advText){
+          const parsed=_parseJSONFromText(advText);
+          if(parsed?.outcome&&parsed?.effects)result=parsed;
+        }
+      }catch(_){}
+    }
+    if(!result)result=_proceduralEvaluate(response,sit,phase);
+  }finally{
+    clearTimeout(_spinnerEscapeTimer);
+    P100._aiEvaluating=false;
+    (window._applyEvaluationResult||_applyEvaluationResult)(result||_proceduralEvaluate(response,sit,phase),response);
+  }
 }
 
 function _proceduralEvaluate(response,sit,phase){
@@ -1131,10 +1264,35 @@ function _renderStateMap(){
 }
 
 function _renderEvaluationResult(result){
+  // Normalise effect keys that may have been mangled by the AI spacing fixer
+  // e.g. "foreign Policy" -> "foreignPolicy", "nation Security" -> "nationSecurity"
+  if(result.effects){
+    const keyMap={'foreign policy':'foreignPolicy','nation security':'nationSecurity','media relations':'mediaRelations','foreign Policy':'foreignPolicy','nation Security':'nationSecurity','media Relations':'mediaRelations'};
+    const fixedEffects={};
+    for(const[k,v]of Object.entries(result.effects)){fixedEffects[keyMap[k]||k]=v;}
+    result.effects=fixedEffects;
+  }
+  if(result.actorShifts){
+    const fixedShifts={};
+    for(const[k,v]of Object.entries(result.actorShifts)){fixedShifts[k.replace(/ /g,'_').replace(/([a-z]) ([A-Z])/g,(m,a,b)=>a+b.toLowerCase())]=v;}
+    result.actorShifts=fixedShifts;
+  }
   const gradeColor={A:'#22c55e',B:'#c8a84b',C:'#f59e0b',D:'#ef4444',F:'#7c3aed'}[result.grade||'C'];
   const appColor=(result.approvalDelta||0)>=0?'#22c55e':'#ef4444';
   const nextDay=Math.min(P100.day+_daysPerEvent(),100);
-  const respArea=document.getElementById('p100-response-area');
+  // Some milestone cards (e.g. joint session) don't have p100-response-area —
+  // fall back to replacing the whole event-area content
+  let respArea=document.getElementById('p100-response-area');
+  if(!respArea){
+    const eventArea=document.getElementById('p100-event-area');
+    if(eventArea){
+      const fallback=document.createElement('div');
+      fallback.id='p100-response-area';
+      eventArea.innerHTML='';
+      eventArea.appendChild(fallback);
+      respArea=fallback;
+    }
+  }
   if(respArea){
     respArea.outerHTML=`
       <div class="p100-result-block" id="p100-result-block">
@@ -1151,7 +1309,7 @@ function _renderEvaluationResult(result){
           ${Object.entries(result.effects||{}).filter(([,v])=>v!==0).map(([k,v])=>{const s=P100_STATS.find(s=>s.id===k);const col=v>0?'#22c55e':'#ef4444';return`<div class="p100-result-effect-row"><span style="font-size:12px">${s?.icon||''}</span><span style="color:#8a93a8;font-size:11px">${s?.label||k}</span><span style="color:${col};font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;margin-left:auto">${v>0?'+':''}${v}</span></div>`;}).join('')}
           ${(result.approvalDelta||0)!==0?`<div class="p100-result-effect-row"><span style="font-size:12px">📊</span><span style="color:#8a93a8;font-size:11px">Approval</span><span style="color:${appColor};font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;margin-left:auto">${result.approvalDelta>0?'+':''}${result.approvalDelta}%</span></div>`:''}
         </div>
-        <button class="p100-next-btn" id="p100-continue-btn" onclick="p100AdvanceDay()">${P100.day>=97?'View Your Legacy →':`Continue to Day ${nextDay} →`}</button>
+        <button class="p100-next-btn" id="p100-continue-btn" onclick="p100ShowEndDay()">${P100.day>=97?'View Your Legacy →':'End Day →'}</button>
         ${_renderStateMap()}
       </div>`;
   }
@@ -1168,60 +1326,90 @@ function _renderCabinetMilestone(){
   if(!unresolved.length){p100AdvanceDayFromCabinet();return;}
   const member=unresolved[0];
   const idx=P100.cabinetMembers.indexOf(member);
-  const color=member.controversial?'#ef4444':'#c8a84b';
-  const confirmed=P100.cabinetMembers.filter(m=>m.confirmed).length;
+  const chosen=P100.cabinetMembers.filter(m=>m.resolved).length;
   const total=P100.cabinetMembers.length;
-  // KEY FIX: data attributes only, no inline function calls with template expressions
-  el.innerHTML=`
-    <div class="p100-event-card" id="p100-active-card" style="border-left:3px solid ${color}">
-      <div class="p100-event-header">
-        <div class="p100-event-phase-tag" style="color:#c8a84b">🏛 MILESTONE — CABINET CONFIRMATIONS (${confirmed}/${total})</div>
-        <div class="p100-event-day-tag">DAY ${P100.day}</div>
+  const [cA,cB]=member.candidates;
+  const riskLabel=(c)=>c.controversial
+    ? `<span style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:#ef4444;letter-spacing:.08em">⚠ HIGH RISK · HIGH REWARD</span>`
+    : `<span style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:#22c55e;letter-spacing:.08em">✓ SAFE PICK · SMOOTH CONFIRMATION</span>`;
+  const voteBar=(c)=>{
+    const col=c.senateFor>=60?'#22c55e':c.senateFor>=51?'#c8a84b':'#ef4444';
+    return`<div style="margin-top:8px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:#4a5568">SENATE VOTE PROJECTION</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:${col};font-weight:700">${c.senateFor}–${c.senateAgainst}</span>
       </div>
-      <div class="p100-event-headline">${member.icon} Nominate ${member.name} — ${member.role}</div>
-      <div class="p100-event-situation">${member.bio}</div>
-      <div style="background:#10141c;border:1px solid #1e2535;border-radius:6px;padding:10px 12px;margin:10px 0;font-family:'IBM Plex Mono',monospace;font-size:10px">
-        <div style="margin-bottom:4px">Senate: <b style="color:#3b82f6">${member.senateFor}</b> for · <b style="color:#ef4444">${member.senateAgainst}</b> against</div>
-        ${member.controversial?'<div style="color:#ef4444">⚠️ Controversial — political risk if floor fight occurs.</div>':'<div style="color:#22c55e">✅ Strong nominee — confirmation expected.</div>'}
+      <div style="height:4px;background:#1e2535;border-radius:2px;overflow:hidden">
+        <div style="width:${c.senateFor}%;height:100%;background:${col};border-radius:2px"></div>
       </div>
-      <div class="p100-event-choices" id="p100-choices">
-        <button class="p100-choice-btn" data-cab-idx="${idx}" data-cab-action="confirm" onclick="p100CabinetVoteHandler(this)">
-          <span class="p100-choice-num">A</span>
-          <div style="flex:1"><div class="p100-choice-text">Advance to the floor — call for a vote</div>
-          <div style="font-size:11px;color:#4a5568;margin-top:3px">Win big or lose publicly.</div></div>
-        </button>
-        <button class="p100-choice-btn" data-cab-idx="${idx}" data-cab-action="withdraw" onclick="p100CabinetVoteHandler(this)">
-          <span class="p100-choice-num">B</span>
-          <div style="flex:1"><div class="p100-choice-text">Withdraw the nomination — cut losses</div>
-          <div style="font-size:11px;color:#4a5568;margin-top:3px">Avoids a floor fight. An acting secretary fills the role.</div></div>
-        </button>
+      <div style="display:flex;justify-content:space-between;margin-top:3px">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:8px;color:#2a3348">0</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:8px;color:#c8a84b">51 ← majority</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:8px;color:#2a3348">100</span>
       </div>
     </div>`;
+  };
+  el.innerHTML=`
+    <div class="p100-event-card" id="p100-active-card" style="border-left:3px solid #c8a84b">
+      <div class="p100-event-header">
+        <div class="p100-event-phase-tag" style="color:#c8a84b">🏛 CABINET SELECTION (${chosen}/${total} chosen)</div>
+        <div class="p100-event-day-tag">DAY ${P100.day}</div>
+      </div>
+      <div class="p100-event-headline">${member.icon} Appoint Your ${member.role}</div>
+      <div class="p100-event-situation">Your transition team has vetted two candidates. Read their backgrounds carefully — Senate vote projections reflect current political dynamics and your party's seat count.</div>
+      <div class="p100-event-choices" id="p100-choices" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px">
+        <button class="p100-choice-btn" data-cab-idx="${idx}" data-cab-cand="0" onclick="p100CabinetPickHandler(this)" style="flex-direction:column;align-items:flex-start;gap:6px;padding:16px">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:8px;color:#c8a84b;letter-spacing:.14em;margin-bottom:4px">── CANDIDATE A ──</div>
+          <div style="font-family:'Playfair Display',serif;font-size:17px;font-weight:700;color:#e8ecf4;line-height:1.2">${cA.name}</div>
+          <div style="font-size:12px;color:#8a93a8;line-height:1.65;flex:1;margin:8px 0">${cA.bio}</div>
+          ${voteBar(cA)}
+          <div style="margin-top:8px">${riskLabel(cA)}</div>
+        </button>
+        <button class="p100-choice-btn" data-cab-idx="${idx}" data-cab-cand="1" onclick="p100CabinetPickHandler(this)" style="flex-direction:column;align-items:flex-start;gap:6px;padding:16px">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:8px;color:#c8a84b;letter-spacing:.14em;margin-bottom:4px">── CANDIDATE B ──</div>
+          <div style="font-family:'Playfair Display',serif;font-size:17px;font-weight:700;color:#e8ecf4;line-height:1.2">${cB.name}</div>
+          <div style="font-size:12px;color:#8a93a8;line-height:1.65;flex:1;margin:8px 0">${cB.bio}</div>
+          ${voteBar(cB)}
+          <div style="margin-top:8px">${riskLabel(cB)}</div>
+        </button>
+      </div>
+    </div>
+    ${_renderSenateSummaryInline()}`;
 }
 
-window.p100CabinetVoteHandler=function(btn){p100CabinetVote(parseInt(btn.dataset.cabIdx,10),btn.dataset.cabAction);};
+window.p100CabinetPickHandler=function(btn){
+  p100CabinetPick(parseInt(btn.dataset.cabIdx,10),parseInt(btn.dataset.cabCand,10));
+};
 
-window.p100CabinetVote=function(idx,action){
+window.p100CabinetPick=function(idx,candIdx){
   const m=P100.cabinetMembers[idx];if(!m||m.resolved)return;
+  const cand=m.candidates[candIdx];
   m.resolved=true;
+  m.name=cand.name; m.bio=cand.bio;
+  m.controversial=cand.controversial;
+  m.senateFor=cand.senateFor; m.senateAgainst=cand.senateAgainst;
+  let passes;
+  if(cand.senateFor>=55){passes=true;}
+  else if(cand.senateFor>=51){passes=Math.random()<0.82;}
+  else{passes=Math.random()<0.15;}
+  m.confirmed=passes;
   let headline,outcome,effects={},approvalDelta=0;
-  if(action==='confirm'){
-    // senateFor is the projected vote COUNT (e.g. 62 senators for, 38 against).
-    // Simple majority = 51. If projected votes ≥51, nominee passes — always.
-    // Only truly contested nominees (senateFor 44-54) have real uncertainty.
-    let passes;
-    if(m.senateFor>=55){passes=true;}                          // comfortable majority — always passes
-    else if(m.senateFor>=51){passes=Math.random()<0.82;}       // slim majority — 18% upset chance
-    else{passes=Math.random()<0.15;}                           // minority support — nearly always fails
-    m.confirmed=passes;
-    if(passes){if(m.stat)P100.stats[m.stat]=Math.min(95,P100.stats[m.stat]+(m.controversial?4:6));headline=`✅ ${m.name} Confirmed — ${m.role}`;outcome=`Senate votes ${m.senateFor}–${m.senateAgainst}. ${m.name} is sworn in immediately. ${m.controversial?'The controversy fades — for now.':'Smooth confirmation strengthens the administration.'}`;approvalDelta=m.controversial?1:2;_adjustActors({gop_senate:m.controversial?-2:2,dem_senate:m.controversial?-3:2});}
-    else{headline=`❌ ${m.name} Rejected — ${m.role} Seat Vacant`;outcome=`The Senate votes against confirmation. An acting secretary will cover the role.`;effects={mediaRelations:-4};approvalDelta=-3;_adjustActors({press_corps:-4});}
-  }else{m.confirmed=false;headline=`⚠️ Nomination Withdrawn — ${m.role}`;outcome=`You pull the nomination before the vote. ${m.controversial?'Relief in the caucus.':'Critics call it a retreat.'}`;effects={mediaRelations:m.controversial?2:-3};approvalDelta=m.controversial?1:-2;_adjustActors({press_corps:m.controversial?2:-3});}
+  if(passes){
+    if(m.stat)P100.stats[m.stat]=Math.min(95,P100.stats[m.stat]+(cand.controversial?4:6));
+    headline=`✅ ${cand.name} Confirmed as ${m.role}`;
+    outcome=`Senate votes ${cand.senateFor}–${cand.senateAgainst}. ${cand.name} is sworn in immediately. ${cand.controversial?'The bold pick pays off.':'A smooth confirmation strengthens the administration.'}`;
+    approvalDelta=cand.controversial?1:2;
+    _adjustActors({gop_senate:cand.controversial?-2:2,dem_senate:cand.controversial?-1:3});
+  }else{
+    headline=`❌ ${cand.name} Rejected — ${m.role} Seat Vacant`;
+    outcome=`The Senate votes against. An acting secretary will cover the role until a new nominee is confirmed.`;
+    effects={mediaRelations:-4};approvalDelta=-3;
+    _adjustActors({press_corps:-4,gop_senate:-3});
+  }
   _applyEffects(effects,approvalDelta);
   const remaining=P100.cabinetMembers.filter(m2=>!m2.resolved);
   const choicesEl=document.getElementById('p100-choices');if(!choicesEl)return;
   const nextLabel=remaining.length>0?`Next: ${remaining[0].role} →`:'Complete Cabinet →';
-  // Again: NO inline function expressions — use named global calls
   const nextCall=remaining.length>0?'_renderCabinetMilestone()':'p100AdvanceDayFromCabinet()';
   choicesEl.innerHTML=`
     <div class="p100-outcome-box">
@@ -1300,15 +1488,15 @@ function _renderJointSessionAddressElectron(agendaItems){
       <div id="p100-joint-step2" style="display:none;margin-top:16px">
         <div class="p100-response-label">
           <span>\ud83c\uddfa\ud83c\uddf8 YOUR ADDRESS \u2014 EDIT BEFORE DELIVERING</span>
-          <span class="p100-char-count" id="p100-joint-speech-count">0 / 1200</span>
+          <span class="p100-char-count" id="p100-joint-speech-count">0 / 5000</span>
         </div>
         <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#4a5568;margin-bottom:8px;letter-spacing:.05em">
           Your local AI drafted this from your topics. Edit freely before delivering to Congress.
         </div>
-        <textarea id="p100-joint-speech" class="p100-response-textarea" maxlength="1200"
+        <textarea id="p100-joint-speech" class="p100-response-textarea" maxlength="5000"
           style="min-height:200px"
           placeholder="Your address will appear here..."
-          oninput="(function(l){const c=document.getElementById('p100-joint-speech-count');if(c)c.textContent=l+' / 1200';const b=document.getElementById('p100-joint-deliver-btn');if(b){b.disabled=l<40;b.style.opacity=l>=40?'1':'.4';b.style.cursor=l>=40?'pointer':'not-allowed';}})(this.value.length)"></textarea>
+          oninput="(function(l){const c=document.getElementById('p100-joint-speech-count');if(c)c.textContent=l+' / 5000';const b=document.getElementById('p100-joint-deliver-btn');if(b){b.disabled=l<40;b.style.opacity=l>=40?'1':'.4';b.style.cursor=l>=40?'pointer':'not-allowed';}})(this.value.length)"></textarea>
         <div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap">
           <button id="p100-joint-deliver-btn" class="p100-submit-btn" onclick="p100DeliverJointSpeech()" disabled style="opacity:.4;cursor:not-allowed">
             \ud83c\udfa4 DELIVER THE ADDRESS TO CONGRESS
@@ -1361,7 +1549,7 @@ window.p100OpenJointSpeechEditor=function(speechText){
   if(!s1||!s2||!ta)return;
   if(speechText)ta.value=speechText;
   const l=ta.value.length;
-  const c=document.getElementById('p100-joint-speech-count');if(c)c.textContent=l+' / 1200';
+  const c=document.getElementById('p100-joint-speech-count');if(c)c.textContent=l+' / 5000';
   const b=document.getElementById('p100-joint-deliver-btn');
   if(b){b.disabled=l<40;b.style.opacity=l>=40?'1':'.4';b.style.cursor=l>=40?'pointer':'not-allowed';}
   s1.style.display='none';s2.style.display='';
@@ -1575,7 +1763,7 @@ function _currentPhase(){return P100_PHASES.find(m=>P100.day>=m.days[0]&&P100.da
 
 function _checkMilestone(){
   const checks=[
-    {key:'cabinet',day:8},
+    {key:'cabinet',day:1},
     {key:'agenda',day:14},
     {key:'legislation',day:42},
     {key:'congress_bill',day:58},
@@ -1588,6 +1776,7 @@ function _checkMilestone(){
 }
 
 async function _scheduleNextEvent(){
+  if(window._p100_scheduleNext_withFollowup&&window._p100_scheduleNext_withFollowup!==_scheduleNextEvent){return window._p100_scheduleNext_withFollowup();}
   if(P100.day>=100){_showEndScreen();return;}
   const milestone=_checkMilestone();
   if(milestone){
@@ -1603,39 +1792,144 @@ async function _scheduleNextEvent(){
     }
   }
   // Reset fail counter every 2 events so AI is always retried
-  if((P100._eventCount||0)%2===0)P100._aiFailCount=0;
   P100._eventCount=(P100._eventCount||0)+1;
   P100._pendingAI=true;_renderBriefingPlaceholder();
   const phase=_currentPhase();
   let situation=null;
   if(P100._aiFailCount<6)situation=await _fetchAISituation(phase);
   P100._pendingAI=false;
-  if(situation){P100._aiFailCount=0;}else{P100._aiFailCount=(P100._aiFailCount||0)+1;situation=_pickFallbackSituation(phase.id);}
+  if(situation){P100._aiFailCount=0;}else{P100._aiFailCount=(P100._aiFailCount||0)+1;situation=await _pickFallbackSituationWithMemory(phase.id);}
   P100._isMilestone=null;P100._currentSituation=situation;_renderBriefing();
 }
 
-function _pickFallbackSituation(phaseId){
+async function _pickFallbackSituation(phaseId){
   const pool=SITUATION_POOL[phaseId]||SITUATION_POOL.first_acts;
   const used=P100._usedByPhase[phaseId]||[];
   let av=pool.filter(s=>!used.includes(s.id));
   // Once curated items are exhausted, switch to procedural briefings to avoid repetition.
   if(!av.length){
     P100._usedByPhase[phaseId]=[];
-    return _buildProceduralSituation(phaseId);
+    return await _buildProceduralSituation(phaseId);
   }
   // Also inject some procedural variety during long runs.
-  if(Math.random()<0.35)return _buildProceduralSituation(phaseId);
+  if(Math.random()<0.35)return await _buildProceduralSituation(phaseId);
   const pick=av[Math.floor(Math.random()*av.length)];
   (P100._usedByPhase[phaseId]=P100._usedByPhase[phaseId]||[]).push(pick.id);
   return JSON.parse(JSON.stringify(pick));
 }
 
-function _buildProceduralSituation(phaseId){
+
+// Domain tags for every curated event — used by the rotation wheel
+const EVENT_DOMAINS = {
+  t1:'economy', t2:'foreign_policy', t3:'intelligence', t4:'media',
+  t5:'congress', t6:'media', f1:'executive', f2:'foreign_policy',
+  f3:'media', f4:'congress', f5:'military', f6:'economy',
+  l1:'congress', l2:'budget', l3:'healthcare', l4:'infrastructure',
+  l5:'economy', c1:'disaster', c2:'cybersecurity', c3:'military',
+  c4:'intelligence', c5:'economy', c6:'security',
+  lg1:'judiciary', lg2:'foreign_policy', lg3:'congress', lg4:'media',
+};
+// Full rotation wheel — every domain the AI can generate
+const DOMAIN_WHEEL = [
+  'economy','foreign_policy','congress','military','intelligence',
+  'judiciary','disaster','cybersecurity','healthcare','budget',
+  'infrastructure','media','security','party_politics','executive',
+];
+// Returns the domain the AI should generate next (least recently used, excluding continuations)
+function _pickNextDomain(){
+  if(!P100._domainHistory) P100._domainHistory=[];
+  const recent=P100._domainHistory.slice(-6);
+  // find first domain not in recent history
+  const next=DOMAIN_WHEEL.find(d=>!recent.includes(d));
+  return next||DOMAIN_WHEEL[Math.floor(Math.random()*DOMAIN_WHEEL.length)];
+}
+// Record a domain as used (call whenever any event fires)
+function _recordDomain(domain){
+  if(!domain)return;
+  if(!P100._domainHistory) P100._domainHistory=[];
+  P100._domainHistory.push(domain);
+  if(P100._domainHistory.length>20) P100._domainHistory.shift();
+}
+// Infer domain from a headline string (fallback for AI-generated events)
+function _inferDomain(headline){
+  if(!headline)return null;
+  const h=headline.toLowerCase();
+  if(/nato|alliance|summit|diplomat|foreign|war|treaty|adversar|nuclear|missile|korea|china|russia|ukraine/.test(h)) return 'foreign_policy';
+  if(/militar|troops|pentagon|general|defense|strike|attack|weapon|army|navy|air force|deploy/.test(h)) return 'military';
+  if(/congress|senate|house|bill|vote|legislat|filibuster|caucus|speaker|majority|minority|senator|representative/.test(h)) return 'congress';
+  if(/economy|market|dow|recession|jobs|gdp|inflation|trade|tariff|budget|debt|deficit|wall street|federal reserve/.test(h)) return 'economy';
+  if(/health|hospital|medicare|medicaid|drug|pharma|pandemic|disease|vaccine|cdc/.test(h)) return 'healthcare';
+  if(/intel|cia|nsa|fbi|classified|leak|spy|surveil|threat|brief/.test(h)) return 'intelligence';
+  if(/court|justice|judge|supreme|constitutional|ruling|legal/.test(h)) return 'judiciary';
+  if(/cyber|hack|breach|infra|grid|digital|ransomware/.test(h)) return 'cybersecurity';
+  if(/hurricane|earthquake|flood|disaster|fema|emergency|storm/.test(h)) return 'disaster';
+  if(/terror|domestic|extremi|plot|security|homeland|agent/.test(h)) return 'security';
+  if(/press|media|scandal|leak|coverage|network|reporter|briefing room/.test(h)) return 'media';
+  if(/infrastructure|highway|bridge|transit|broadband|energy grid/.test(h)) return 'infrastructure';
+  if(/party|base|primary|caucus|coalition|poll|approval|fundrais/.test(h)) return 'party_politics';
+  if(/executive order|veto|pardon|cabinet|nomination|appoint/.test(h)) return 'executive';
+  if(/shutdown|appropriat|spending|tax|revenue|fiscal/.test(h)) return 'budget';
+  return null;
+}
+
+async function _buildProceduralSituation(phaseId){
   const weak=[...P100_STATS].sort((a,b)=>P100.stats[a.id]-P100.stats[b.id])[0];
   const topActor=[...WORLD_ACTORS].sort((a,b)=>(P100.actors[a.id]||0)-(P100.actors[b.id]||0))[0];
   const agenda=P100.selectedAgenda.map(id=>P100_AGENDA_OPTIONS.find(a=>a.id===id)?.label).filter(Boolean);
-  const topic=agenda.length?agenda[Math.floor(Math.random()*agenda.length)]:'your domestic agenda';
   const phaseLabel={transition:'Transition',first_acts:'First Acts',legislation:'Legislation',crisis:'Crisis',legacy:'Legacy'}[phaseId]||'Briefing';
+  const voices=['chief_of_staff','press_sec','nsc_advisor','econ_advisor','vp'];
+  const advisorVoice=voices[Math.floor(Math.random()*voices.length)];
+  const adv=ADVISOR_BIOS[advisorVoice];
+
+  // Try local AI to generate a unique event
+  if(window.isElectron&&window.localAI){
+    const procLogH=P100.decisionLog.slice(-8).map(d=>d.headline).filter(Boolean);
+    const procAiH=(P100._aiGeneratedHeadlines||[]).slice(-8);
+    const procRecent=[...new Set([...procAiH,...procLogH])].slice(-10);
+    const procRecentH=procRecent.join('; ')||'none yet';
+    const procBanned=[...new Set(procRecent.flatMap(h=>
+      h.replace(/[^a-zA-Z ]/g,'').toLowerCase().split(' ')
+       .filter(w=>w.length>4&&!['president','morgan','white','house','crisis','threat','calls','could','about','their','after','amid','tests','your','resolve','first','begin','today','makes','landfall','would','begin','leads','warns','emerges','under','press'].includes(w))
+    ))].slice(0,12).join(', ');
+    const procDomain=_pickNextDomain();
+    const procDomainLabel=procDomain.replace(/_/g,' ');
+    const procWeakestLine=weak&&_inferDomain(weak.label)===procDomain?`Weakest policy: ${weak.label}. `:'';
+    const prompt=`Generate a unique US presidential crisis briefing for Day ${P100.day} of 100 (phase: ${phaseLabel}). President: ${P100.playerName}, ${P100.playerPartyLabel}. Approval: ${P100.approvalRating}%. ${procWeakestLine}Career background: ${P100.career||'Senator'}. Ideology: ${P100.ideology||'moderate'}. Hostile actor: ${topActor?.label||'an adversary'}. Recent events: ${procRecentH}.\n\nTHIS EVENT MUST BE ABOUT: ${procDomainLabel}. Write a crisis strictly in the ${procDomainLabel} domain. Do NOT mention healthcare or other policy areas unless they are directly part of a ${procDomainLabel} crisis. NEVER NATO cyber attacks.\nPRONOUN RULE: Never use he/she/his/her for the President.\nBANNED SPECIFICS (avoid these, already seen recently): ${procBanned||'none'}.\n\nRespond with ONLY a JSON object, no other text:\n{"headline":"Short dramatic headline under 10 words — must be about ${procDomainLabel}","brief":"Two to three urgent sentences about this ${procDomainLabel} crisis. Name real stakes.","advisorVoice":"${advisorVoice}","advisorLine":"One urgent question the ${adv?.title||'advisor'} asks. Under 20 words."}`;;
+    try{
+      const raw=await window.localAI.getEvent(prompt);
+      if(raw?.headline&&raw?.brief&&raw?.advisorLine){
+        raw.headline=_fixAISpacing(raw.headline);
+        raw.brief=_fixAISpacing(raw.brief);
+        raw.advisorLine=_fixAISpacing(raw.advisorLine);
+        raw.advisorVoice=advisorVoice;
+        raw.id=`proc_${phaseId}_${P100.day}_${Math.floor(Math.random()*1e6)}`;
+        if(!P100._aiGeneratedHeadlines) P100._aiGeneratedHeadlines=[];
+        const _normHP=h=>h.toLowerCase().replace(/[^a-z0-9 ]/g,'').trim();
+        if(P100._aiGeneratedHeadlines.some(h=>_normHP(h)===_normHP(raw.headline)))return null;
+        P100._aiGeneratedHeadlines.push(raw.headline);
+        if(P100._aiGeneratedHeadlines.length>30) P100._aiGeneratedHeadlines.shift();
+        _recordDomain(_inferDomain(raw.headline));
+        return raw;
+      }
+    }catch(_){}
+    try{
+      const advText=await window.localAI.getAdvice(prompt);
+      if(advText){
+        const parsed=_parseJSONFromText(advText);
+        if(parsed?.headline&&parsed?.brief){
+          parsed.headline=_fixAISpacing(parsed.headline);
+          parsed.brief=_fixAISpacing(parsed.brief);
+          parsed.advisorLine=_fixAISpacing(parsed.advisorLine||'What are your orders?');
+          parsed.advisorVoice=advisorVoice;
+          parsed.id=`proc_${phaseId}_${P100.day}_${Math.floor(Math.random()*1e6)}`;
+          return parsed;
+        }
+      }
+    }catch(_){}
+  }
+
+  // Final fallback: purely procedural (no static events, still unique)
+  const topic=agenda.length?agenda[Math.floor(Math.random()*agenda.length)]:'your domestic agenda';
   const verbs=['under pressure','splitting your coalition','triggering market anxiety','drawing heavy media scrutiny','testing your congressional leverage'];
   const hooks=[
     `A senior delegation from ${topActor?.label||'Congress'} is demanding immediate clarity on ${topic}.`,
@@ -1644,9 +1938,6 @@ function _buildProceduralSituation(phaseId){
     `Cable networks are framing this as a leadership test for Day ${P100.day}.`
   ];
   const shuffled=[...hooks].sort(()=>Math.random()-.5).slice(0,3);
-  const voices=['chief_of_staff','press_sec','nsc_advisor','econ_advisor','vp'];
-  const advisorVoice=voices[Math.floor(Math.random()*voices.length)];
-  const adv=ADVISOR_BIOS[advisorVoice];
   return{
     id:`proc_${phaseId}_${P100.day}_${Math.floor(Math.random()*1e6)}`,
     headline:`${phaseLabel} Flashpoint: ${topic}`,
@@ -1675,30 +1966,74 @@ function _fixAISpacing(text){
   return text.replace(/ {2,}/g,' ').trim();
 }
 
+// Returns a compact player-context block for AI prompts
+function _playerCtx(){
+  const agenda=P100.selectedAgenda.map(id=>P100_AGENDA_OPTIONS.find(a=>a.id===id)?.label).filter(Boolean).join(', ')||'not yet set';
+  const lines=[
+    `CURRENT TITLE: President of the United States — always address as "Mr./Madam President" or "the President", NEVER as Senator or by former career title`,
+    `FORMER CAREER: ${P100.career||'Senator'} (background context only — they are now President)`,
+    `IDEOLOGY: ${P100.ideology||'moderate'}`,
+    P100.slogan?`CAMPAIGN SLOGAN: "${P100.slogan}"`:'',
+    `DEFINING MOMENT: ${P100.campaignMoment||'public service'}`,
+    `POLICY AGENDA: ${agenda}`,
+    `MANDATE: ${P100.finalEV} electoral votes (${P100.mandate})`,
+    `CONGRESS: Senate ${P100.senate.dem}D-${P100.senate.rep}R, House ${P100.house.dem}D-${P100.house.rep}R`,
+    P100.filibusterProof?'NOTE: Filibuster-proof Senate majority':P100.unifiedGov?'NOTE: Unified government':'NOTE: '+( P100.dividedGov?'Divided government':'Split Congress'),
+  ].filter(Boolean).join(' | ');
+  return lines;
+}
+
 async function _fetchAISituation(phase){
   const weakest=[...P100_STATS].sort((a,b)=>P100.stats[a.id]-P100.stats[b.id])[0];
   const agenda=P100.selectedAgenda.map(id=>P100_AGENDA_OPTIONS.find(a=>a.id===id)?.label).filter(Boolean).join(', ');
-  const recentH=P100.decisionLog.slice(-4).map(d=>d.headline).join('; ')||'none yet';
+  // Merge decisionLog headlines with AI-generated ones (AI events aren't in decisionLog until after player responds)
+  const logH=P100.decisionLog.slice(-8).map(d=>d.headline).filter(Boolean);
+  const aiH=(P100._aiGeneratedHeadlines||[]).slice(-8);
+  const allRecent=[...new Set([...aiH,...logH])].slice(-10);
+  const recentH=allRecent.join('; ')||'none yet';
+  // Extract banned keyword fragments from recent headlines so the model has a concrete avoid-list
+  const bannedTopics=[...new Set(allRecent.flatMap(h=>
+    h.replace(/[^a-zA-Z ]/g,'').toLowerCase().split(' ')
+     .filter(w=>w.length>4&&!['president','morgan','white','house','crisis','threat','calls','could','about','their','after','amid','tests','your','resolve','first','begin','today','makes','landfall','would','begin','leads','warns','emerges','under','press'].includes(w))
+  ))].slice(0,12).join(', ');
   const advisors=['chief_of_staff','press_sec','nsc_advisor','econ_advisor','vp'];
   const advisor=advisors[Math.floor(Math.random()*advisors.length)];
   const adv=ADVISOR_BIOS[advisor];
 
-  // Simplified prompt tuned for phi-3 mini — shorter, cleaner JSON schema, no nested templates
-  const prompt=`Create a US presidential crisis briefing for a political simulation game. Day ${P100.day} of 100. Phase: ${phase.label}. President: ${P100.playerName}, ${P100.playerPartyLabel}. Approval: ${P100.approvalRating}%. Weakest policy: ${weakest.label}. Agenda: ${agenda}. Recent events: ${recentH}.
+  // Personalised prompt — incorporates player backstory so events feel earned
+  const domain=_pickNextDomain();
+  const domainLabel=domain.replace(/_/g,' ');
+  // Only include agenda/weakest when they're relevant to this domain — prevents small model anchoring on e.g. "Healthcare Reform" for every event
+  const agendaForDomain=P100_AGENDA_OPTIONS.filter(a=>P100.selectedAgenda.includes(a.id)&&_inferDomain(a.label)===domain||a.stat===domain.replace('_policy','Policy').replace(/_([a-z])/g,(_,c)=>c.toUpperCase())).map(a=>a.label).join(', ');
+  const weakestLine=weakest&&_inferDomain(weakest.label)===domain?`Weakest policy: ${weakest.label}. `:'';
+  const ctx=`President: ${P100.playerName}, ${P100.playerPartyLabel}. Career background: ${P100.career||'Senator'}. Ideology: ${P100.ideology||'moderate'}. Congress: Senate ${P100.senate.dem}D-${P100.senate.rep}R, House ${P100.house.dem}D-${P100.house.rep}R. ${P100.unifiedGov?'Unified government.':P100.dividedGov?'Divided government.':'Split Congress.'}${agendaForDomain?` Relevant agenda: ${agendaForDomain}.`:''}`;
+  const prompt=`Create a US presidential crisis briefing for a political simulation game. Day ${P100.day} of 100. Phase: ${phase.label}. Approval: ${P100.approvalRating}%. ${weakestLine}Recent events: ${recentH}.
+${ctx}
 
-Write a briefing the president must respond to in their own words. Make it specific to the current situation, different from recent events, and create real tension around ${weakest.label}.
+THIS EVENT MUST BE ABOUT: ${domainLabel}. Write a crisis strictly in the ${domainLabel} domain only. Do NOT mention healthcare, the agenda, or other policy areas unless they are directly part of a ${domainLabel} crisis.
+PRONOUN RULE: Never use gendered pronouns (he/she/his/her) for the President.
+BANNED SPECIFICS (avoid these, already seen recently): ${bannedTopics||'none'}.
 
 Respond with ONLY a JSON object. No other text before or after. Use this exact format:
-{"headline":"Short dramatic headline under 10 words","brief":"Two or three sentences describing the crisis. Be specific and urgent.","advisorVoice":"${advisor}","advisorLine":"One urgent question the ${adv.title} asks the president. Under 20 words."}`;
+{"headline":"Short dramatic headline under 10 words — must be about ${domainLabel}","brief":"Two or three urgent sentences about this ${domainLabel} crisis. Be specific about the ${domainLabel} situation.","advisorVoice":"${advisor}","advisorLine":"One urgent question the ${adv.title} asks. Under 20 words."}`;
 
   // Local AI (Electron)
   if(window.isElectron&&window.localAI){
     try{
       const raw=await window.localAI.getEvent(prompt);
       if(raw?.headline&&raw?.brief&&raw?.advisorLine){
+        // Track AI-generated headlines so recentH in the next call stays fresh
+        // (decisionLog only gets the headline after the player submits a response)
+        if(!P100._aiGeneratedHeadlines) P100._aiGeneratedHeadlines=[];
         raw.headline=_fixAISpacing(raw.headline);
         raw.brief=_fixAISpacing(raw.brief);
         raw.advisorLine=_fixAISpacing(raw.advisorLine);
+        // Reject duplicate headline — return null so caller falls back to procedural
+        const _normH=h=>h.toLowerCase().replace(/[^a-z0-9 ]/g,'').trim();
+        if(P100._aiGeneratedHeadlines.some(h=>_normH(h)===_normH(raw.headline)))return null;
+        P100._aiGeneratedHeadlines.push(raw.headline);
+        if(P100._aiGeneratedHeadlines.length>30) P100._aiGeneratedHeadlines.shift();
+        _recordDomain(_inferDomain(raw.headline));
         return raw;
       }
     }catch(_){}
@@ -1712,29 +2047,13 @@ Respond with ONLY a JSON object. No other text before or after. Use this exact f
           parsed.brief=_fixAISpacing(parsed.brief);
           parsed.advisorLine=_fixAISpacing(parsed.advisorLine||'What are your orders?');
           parsed.advisorVoice=parsed.advisorVoice||advisor;
+          _recordDomain(_inferDomain(parsed.headline));
           return parsed;
         }
       }
     }catch(_){}
   }
 
-  // Cloud worker
-  if(window._POTUS_AI_WORKER_URL){
-    try{
-      const res=await fetch(window._POTUS_AI_WORKER_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt,first100:true,situationOnly:true}),signal:AbortSignal.timeout(9000)});
-      if(res.ok){
-        const data=await res.json();
-        let raw=data.event||data.advice||data.text;
-        if(typeof raw==='string')raw=_parseJSONFromText(raw);
-        if(raw?.headline&&raw?.brief){
-          raw.headline=_fixAISpacing(raw.headline);
-          raw.brief=_fixAISpacing(raw.brief);
-          raw.advisorLine=_fixAISpacing(raw.advisorLine||'What are your orders?');
-          return raw;
-        }
-      }
-    }catch(_){}
-  }
   return null;
 }
 
@@ -1752,6 +2071,122 @@ function _parseJSONFromText(text){
 // ══════════════════════════════════════════════════════════════════════════════
 // SECTION 8 — ADVANCE DAY
 // ══════════════════════════════════════════════════════════════════════════════
+
+// Shows the "End of Day" interstitial with the free-action input before the next event
+window.p100ShowEndDay=function(){
+  if(P100.day>=97){window.p100AdvanceDay();return;}
+  const nextDay=Math.min(100,P100.day+_daysPerEvent());
+  const el=document.getElementById('p100-event-area');
+  if(!el)return;
+
+  const flavours=[
+    'The Oval Office is quiet. Staff have gone home. What else needs doing before tomorrow?',
+    "The day's briefings are closed. The press pool has filed. Is there anything you want on the record?",
+    "It's late in the West Wing. Your scheduler is already building tomorrow's briefing book.",
+    'The situation room has cleared. Before the next crisis lands, is there anything you want to act on?',
+    'Your chief of staff leaves a note: "Anything else before we close out the day?"',
+  ];
+  const flavour=flavours[P100.day%flavours.length];
+
+  el.innerHTML=`
+    <div class="p100-event-card" style="border-left:3px solid #1e2535">
+      <div class="p100-event-header">
+        <div class="p100-event-phase-tag" style="color:#c8a84b;opacity:.7">📅 END OF DAY ${P100.day}</div>
+        <div class="p100-event-day-tag" style="color:#4a5568">NEXT: DAY ${nextDay}</div>
+      </div>
+      <div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:900;color:#e8ecf4;margin:10px 0 6px;line-height:1.2">Day ${P100.day} — Close of Business</div>
+      <div style="font-size:13px;color:#4a5568;line-height:1.7;margin-bottom:22px;font-style:italic">${flavour}</div>
+      <div id="p100-free-action-area">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:#c8a84b;letter-spacing:.18em;margin-bottom:10px">🗒 OFF-BRIEF ACTION <span style="color:#2a3348;letter-spacing:.05em;font-size:8px">— OPTIONAL</span></div>
+        <div style="font-size:12px;color:#4a5568;line-height:1.6;margin-bottom:12px">Make a call. Issue a quiet order. Release a statement. Anything not on today's official schedule — it goes on the record and the press will notice.</div>
+        <textarea id="p100-free-action-input"
+          placeholder="e.g. Called Senator Harris to shore up support for the healthcare bill. Issued a quiet executive memo on border processing. Spoke to the Fed chair off the record about rate concerns."
+          style="width:100%;box-sizing:border-box;min-height:90px;resize:vertical;background:#0a0c10;border:1px solid #1e2535;border-radius:6px;color:#e8ecf4;font-family:'IBM Plex Sans',sans-serif;font-size:13px;line-height:1.6;padding:10px 12px;outline:none;transition:border-color .2s"
+          onfocus="this.style.borderColor='#c8a84b'" onblur="this.style.borderColor='#1e2535'"></textarea>
+        <div style="display:flex;gap:10px;margin-top:12px">
+          <button class="p100-next-btn" style="flex:1;background:#0a0c10;color:#4a5568;border:1px solid #1e2535;font-size:10px" onclick="window.p100AdvanceDay()">Nothing today → Day ${nextDay}</button>
+          <button class="p100-next-btn" style="flex:2" onclick="window.p100SubmitFreeAction()">File This Action →</button>
+        </div>
+      </div>
+    </div>`;
+};
+
+window.p100SubmitFreeAction=async function(){
+  const input=document.getElementById('p100-free-action-input');
+  const text=input?input.value.trim():'';
+  if(!text){window.p100AdvanceDay();return;}
+
+  const nextDay=Math.min(100,P100.day+_daysPerEvent());
+  const actionArea=document.getElementById('p100-free-action-area');
+  if(!actionArea)return;
+
+  // Show loading state — replace the form with a spinner card
+  actionArea.innerHTML=`
+    <div style="padding:20px 0;display:flex;align-items:center;gap:12px">
+      <div style="width:14px;height:14px;border:2px solid #c8a84b;border-top-color:transparent;border-radius:50%;animation:spin 1s linear infinite;flex-shrink:0"></div>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#4a5568;letter-spacing:.08em">Logging action to the presidential record…</span>
+    </div>`;
+
+  let outcome='';
+  let headline='Presidential Action Logged';
+  try{
+    if(window.isElectron&&window.localAI&&typeof window.localAI.getAdvice==='function'){
+      const ctx=_playerCtx();
+      const prompt=`You are a senior White House correspondent covering the ${P100.playerPartyLabel} administration. President ${P100.playerName}, Day ${P100.day} of 100. Approval: ${P100.approvalRating}%. ${ctx}.
+
+The president took this off-brief action today: "${text}"
+
+Write a short news dispatch about this action — as if it just happened. Format your response as JSON:
+{
+  "headline": "A punchy news headline under 10 words describing what the president did",
+  "dispatch": "Two to three sentences of AP-style news copy. Be specific and grounded. Describe the immediate reaction or consequence. Reference real Washington dynamics — what does this signal? Who benefits or loses? Do NOT repeat the action word for word — report its impact.",
+  "tag": "one of: FOREIGN POLICY | DOMESTIC | ECONOMY | SECURITY | POLITICS | DIPLOMACY"
+}
+Return ONLY valid JSON, no other text.`;
+      const raw=await window.localAI.getAdvice(prompt);
+      const parsed=_parseJSONFromText(raw);
+      if(parsed?.dispatch&&parsed.dispatch.length>20){
+        outcome=_fixAISpacing(parsed.dispatch);
+        if(parsed.headline) headline=_fixAISpacing(parsed.headline);
+      }
+    }
+  }catch(e){console.warn('[p100 free action]',e);}
+
+  if(!outcome||outcome.length<20){
+    const fallbacks=[
+      `The move landed quietly inside the West Wing but drew immediate notice on Capitol Hill. Senior aides described it as consistent with the president's campaign commitments — a signal that the administration intends to follow through on its promises.`,
+      `The action drew measured praise from allied quarters and a sharp response from the opposition. Communications staff began preparing talking points within the hour, framing it as a demonstration of decisive executive leadership.`,
+      `Reaction split largely along partisan lines. The president's base responded warmly; critics questioned the timing. The press office logged eleven follow-up requests before end of business.`,
+    ];
+    outcome=fallbacks[P100.day%fallbacks.length];
+  }
+
+  // Add to ticker
+  P100.tickerItems.push(`PRESIDENT ${(P100.playerName||'').toUpperCase().split(' ').pop()}: "${text.slice(0,60)}${text.length>60?'…':''}"`);
+  _updateTicker();
+
+  // Render the result as a proper news dispatch card — player must click to continue
+  actionArea.innerHTML=`
+    <div style="border-top:1px solid #1e2535;padding-top:20px;margin-top:4px">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:8px;color:#c8a84b;letter-spacing:.2em;margin-bottom:10px">📰 PRESS OFFICE DISPATCH</div>
+
+      <div style="background:#060810;border:1px solid #1e2535;border-left:3px solid #c8a84b;border-radius:6px;padding:16px 18px;margin-bottom:16px">
+        <div style="font-family:'Playfair Display',serif;font-size:16px;font-weight:900;color:#e8ecf4;line-height:1.3;margin-bottom:10px">${headline}</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:8px;color:#4a5568;letter-spacing:.12em;margin-bottom:10px">
+          THE WHITE HOUSE · DAY ${P100.day} OF 100 · ${P100.playerPartyLabel.toUpperCase()} ADMINISTRATION
+        </div>
+        <div style="font-size:13px;color:#8a93a8;line-height:1.8">${outcome}</div>
+        <div style="margin-top:12px;padding-top:10px;border-top:1px solid #1e2535;font-family:'IBM Plex Mono',monospace;font-size:9px;color:#2a3348;font-style:italic">
+          Your action: "${text.length>120?text.slice(0,120)+'…':text}"
+        </div>
+      </div>
+
+      <button class="p100-next-btn" onclick="window.p100AdvanceDay()" style="width:100%">
+        Start Day ${nextDay} →
+      </button>
+    </div>`;
+};
+
 window.p100AdvanceDay=function(){
   P100.day=Math.min(100,P100.day+_daysPerEvent());
   P100._currentSituation=null;P100._isMilestone=null;
@@ -1856,7 +2291,7 @@ Write a 3-paragraph historical assessment in the tone of a serious political bio
 
 Return ONLY valid JSON: {"paragraph1":"...","paragraph2":"...","paragraph3":"...","verdict":"One memorable sentence."}`;
   if(window.isElectron&&window.localAI){try{const raw=await window.localAI.evaluate(prompt);if(raw?.paragraph1&&raw?.verdict)return raw;}catch(_){}}
-  if(window._POTUS_AI_WORKER_URL){try{const res=await fetch(window._POTUS_AI_WORKER_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt,evaluation:true}),signal:AbortSignal.timeout(14000)});if(res.ok){const data=await res.json();let raw=data.evaluation||data.advice||data.text;if(typeof raw==='string')raw=JSON.parse(raw.replace(/```json|```/g,'').trim());if(raw?.paragraph1&&raw?.verdict)return raw;}}catch(_){}}
+
   return null;
 }
 
@@ -1881,17 +2316,543 @@ function _renderTicker(){const t=document.getElementById('p100-news-ticker');con
 // ══════════════════════════════════════════════════════════════════════════════
 // SECTION 12 — ENTRY HOOKS
 // ══════════════════════════════════════════════════════════════════════════════
-function injectBreakdownButton(won){
-  if(!won||!window.isElectron||document.getElementById('bk-presidency-btn'))return;
-  const cta=document.querySelector('#breakdown-screen .bk-cta');if(!cta)return;
-  const btn=document.createElement('button');btn.id='bk-presidency-btn';btn.className='bk-btn primary';
-  btn.style.cssText='background:linear-gradient(135deg,#b8962e,#c8a84b);color:#060810;font-weight:900;letter-spacing:.05em;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:8px;width:100%';
-  btn.innerHTML='🏛 BEGIN YOUR FIRST 100 DAYS &nbsp;→';btn.onclick=initFirst100Days;
-  const sub=document.createElement('div');sub.style.cssText='font-family:"IBM Plex Mono",monospace;font-size:9px;color:rgba(200,168,75,.6);text-align:center;letter-spacing:.08em;margin-top:4px';
-  sub.textContent='Type your responses as President — AI evaluates every decision';
-  cta.appendChild(btn);cta.appendChild(sub);
-}
-(function(){function _try(){if(typeof showBreakdownScreen!=='undefined'){const _o=showBreakdownScreen;window.showBreakdownScreen=function(won,pEV,oEV){_o(won,pEV,oEV);if(won)setTimeout(()=>injectBreakdownButton(won),300);};}else setTimeout(_try,100);}document.readyState==='loading'?document.addEventListener('DOMContentLoaded',_try):_try();})();
+// First 100 Days button is now in index.html and shown/hidden directly by showBreakdownScreen in game-night.js
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SECTION 11 — FIRST 100 DAYS TUTORIAL
+// ══════════════════════════════════════════════════════════════════════════════
+const P100_TUT_STEPS = [
+  { icon: '🏛', title: 'Welcome to the First 100 Days',
+    body: `You've won the presidency. The next 100 days will define your legacy. Every decision shapes your approval rating, your relationships in Washington, and the country's future. This tutorial walks you through how it all works.` },
+  { icon: '📋', title: 'Read Each Briefing Carefully',
+    body: `Each day brings a new crisis or challenge. Read the headline, the situation brief, and your advisor's question. The briefing is tailored to your campaign background — your career, ideology, and promises will come back to haunt or reward you.` },
+  { icon: '🇺🇸', title: 'Write Your Presidential Response',
+    body: `Type your response in plain English — as if you're actually giving orders. The more specific and decisive you are, the better the outcome. Vague answers get mediocre grades. Bold, detailed orders get real results (and real risks).
+
+Tip: Use Ctrl+Enter to submit quickly.` },
+  { icon: '🤖', title: 'AI Starting Points',
+    body: `Below the text box you'll see AI-suggested starting points. Click one to pre-fill a response — then edit it to make it your own. These are just prompts, not complete answers.` },
+  { icon: '📊', title: 'Grades & Consequences',
+    body: `After you respond, the AI evaluates your decision and gives you a grade (A–F). Your stats, approval rating, and relationships with Congress, NATO, Wall Street, and others all shift based on your choices. Check the right sidebar to track your performance.` },
+  { icon: '📅', title: 'End of Day & Free Actions',
+    body: `After seeing your grade, click "End Day →" to move forward. Before the next event starts, you'll get a chance to log a free presidential action — a call, statement, or order that happens off-brief. This is optional but can move relationships and generate press coverage.` },
+  { icon: '🎯', title: 'Milestones',
+    body: `At key points (Day 14, 42, 64, 72, 99…) you'll hit major milestones: picking your Cabinet, setting your agenda, pushing legislation, handling a peak crisis, and delivering your final address. These are the moments that make or break presidencies.` },
+  { icon: '📈', title: 'Your Approval Rating',
+    body: `Your approval rating (top-right) reflects how the country sees your presidency. It's driven by your policy stats. Keep all five stats healthy — ignoring any one area will eventually drag your approval down. A rating below 35% means a failed presidency.` },
+  { icon: '🏆', title: 'Building Your Legacy',
+    body: `At Day 100, your legacy is scored. Pass legislation, handle crises well, maintain strong relationships, and deliver a great final address. Your campaign background shapes how the country judges you — what you promised matters.
+
+Good luck, Mr. President.` },
+];
+
+window.p100ShowTutorial = function() {
+  if(document.getElementById('p100-tut-overlay')) return;
+  let step = 0;
+
+  function render() {
+    const s = P100_TUT_STEPS[step];
+    const dots = P100_TUT_STEPS.map((_,i) =>
+      `<div style="width:6px;height:6px;border-radius:50%;background:${i===step?'#c8a84b':'#2a3348'};transition:background .2s"></div>`
+    ).join('');
+    const ov = document.getElementById('p100-tut-overlay');
+    if(!ov) return;
+    ov.querySelector('.p100-tut-card').innerHTML = `
+      <div style="font-size:32px;margin-bottom:12px">${s.icon}</div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:#4a5568;letter-spacing:.2em;margin-bottom:10px">STEP ${step+1} OF ${P100_TUT_STEPS.length}</div>
+      <div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:900;color:#e8ecf4;margin-bottom:14px;line-height:1.25">${s.title}</div>
+      <div style="font-size:13px;color:#8a93a8;line-height:1.75;white-space:pre-line;margin-bottom:24px">${s.body}</div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <button onclick="document.getElementById('p100-tut-overlay').remove()" style="background:none;border:none;color:#4a5568;font-family:'IBM Plex Mono',monospace;font-size:10px;cursor:pointer;letter-spacing:.08em">Skip</button>
+        <div style="display:flex;gap:6px;align-items:center">${dots}</div>
+        <button id="p100-tut-next" style="background:linear-gradient(135deg,#b8962e,#c8a84b);border:none;border-radius:6px;color:#060810;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:900;letter-spacing:.08em;padding:10px 20px;cursor:pointer">
+          ${step < P100_TUT_STEPS.length-1 ? 'Next →' : 'Got It →'}
+        </button>
+      </div>`;
+    document.getElementById('p100-tut-next').onclick = function() {
+      if(step < P100_TUT_STEPS.length-1){ step++; render(); }
+      else { document.getElementById('p100-tut-overlay')?.remove(); }
+    };
+  }
+
+  const ov = document.createElement('div');
+  ov.id = 'p100-tut-overlay';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:9000;background:rgba(6,8,16,0.88);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)';
+  ov.innerHTML = '<div class="p100-tut-card" style="background:#10141c;border:1px solid #2a3348;border-radius:12px;padding:32px 36px;max-width:520px;width:90%;box-shadow:0 24px 60px rgba(0,0,0,.7)"></div>';
+  ov.addEventListener('click', function(e){ if(e.target===ov) ov.remove(); });
+  document.body.appendChild(ov);
+  render();
+};
+
+// Auto-show tutorial on first visit each session
+(function _p100AutoTut(){
+  // We hook into initFirst100Days by patching _renderShell
+  const _orig = window._p100AutoTutInstalled;
+  if(_orig) return;
+  window._p100AutoTutInstalled = true;
+})();
 
 window.initFirst100Days=initFirst100Days;
+window._p100RenderShell=_renderShell;
+window._p100StartClock=_startClock;
+window._p100ScheduleNextEvent=_scheduleNextEvent;
 window.P100_STATE=()=>P100;
+
+window.p100ConfirmExitToMenu = function(){
+  const msg='Return to main menu?<br><span style="font-size:11px;color:#8a93a8">Your game will be auto-saved first.</span>';
+  if(typeof showConfirmDialog==='function'){
+    showConfirmDialog(msg, ()=>window.p100ExitToMenu());
+  } else {
+    window.p100ExitToMenu();
+  }
+};
+
+// Called on load — re-renders whatever event was active when the game was saved.
+// Falls back to scheduling a fresh event if nothing was in progress.
+window._p100RestoreEvent = function(){
+  // If a milestone was active, re-render it directly
+  if(P100._isMilestone){
+    switch(P100._isMilestone){
+      case 'cabinet_confirmations': return _renderCabinetMilestone();
+      case 'agenda':                return _renderAgendaMilestone();
+      case 'legislation':           return _renderLegislationMilestone();
+      case 'congress_bill':         return _renderCongressBillMilestone();
+      case 'state_of_union':        return _renderStateOfUnionMilestone();
+      case 'crisis_peak':           return _renderCrisisMilestone();
+      case 'address':               return _renderFinalAddressMilestone();
+    }
+  }
+  // If a regular situation was active, re-render it
+  if(P100._currentSituation){
+    return _renderBriefing();
+  }
+  // Nothing was in progress — schedule a fresh event as normal
+  _scheduleNextEvent();
+};
+
+window.p100ExitToMenu = function(){
+  // Stop clock and pending timers before leaving
+  if(P100 && P100._clockInterval){ clearInterval(P100._clockInterval); P100._clockInterval=null; }
+  P100._pendingAI=false;
+  P100._aiEvaluating=false;
+  if(typeof autoSaveGame==='function') autoSaveGame();
+  else if(typeof saveGame==='function') saveGame('auto');
+  if(typeof showScreen==='function') showScreen('setup-screen');
+};
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SECTION 11 — EVENT MEMORY, RECURRING CHARACTERS & X (TWITTER) FEED
+// ══════════════════════════════════════════════════════════════════════════════
+
+// ── RECURRING CHARACTERS ─────────────────────────────────────────────────────
+const RECURRING_CHARACTERS = [
+  { id:'sen_malone',    name:'Senator Malone',       title:'Senate Minority Leader',    icon:'🔴', party:'opp',     personality:'shrewd dealmaker who rarely shows his hand early' },
+  { id:'rep_chen',      name:'Rep. Julia Chen',      title:'House Progressive Caucus',  icon:'🔵', party:'ally',    personality:'principled idealist who punishes perceived betrayal' },
+  { id:'gov_hartley',   name:'Governor Hartley',     title:'Governor, swing state',     icon:'🏛', party:'neutral', personality:'pragmatic centrist who tracks polls obsessively' },
+  { id:'amb_reeves',    name:'Ambassador Reeves',    title:'US Ambassador to UN',       icon:'🌐', party:'neutral', personality:'meticulous multilateralist who despises unilateral moves' },
+  { id:'dr_walsh',      name:'Dr. Walsh',            title:'Fed Chair',                 icon:'📈', party:'neutral', personality:'hawkish on inflation, deeply protective of Fed independence' },
+  { id:'sec_okafor',    name:'Secretary Okafor',     title:'Treasury Secretary',        icon:'💵', party:'ally',    personality:'technocratic moderate who thinks in bond yields' },
+  { id:'col_brooks',    name:'General Brooks',       title:'Chairman, Joint Chiefs',    icon:'🛡', party:'neutral', personality:'blunt, hates half-measures, loyal to the uniform not the party' },
+  { id:'reporter_sato', name:'Dana Sato',            title:'White House Correspondent', icon:'📺', party:'press',   personality:'aggressive on access, fair on facts, hunting the next scoop' },
+];
+
+function _initRecurringChars(){
+  if(!P100._charRelations) P100._charRelations = {};
+  if(!P100._charHistory)   P100._charHistory   = {};
+  RECURRING_CHARACTERS.forEach(c=>{
+    if(P100._charRelations[c.id]===undefined) P100._charRelations[c.id]=50;
+  });
+}
+
+// ── EVENT MEMORY ─────────────────────────────────────────────────────────────
+const EVENT_FOLLOWUPS = {
+  'c2': { minDaysLater:5, chancePerDay:0.15,
+    headline:'Cyber Retaliation: Second Wave Detected',
+    brief:'NSA reports the state actor behind last week\'s Treasury breach has returned — this time probing power grid SCADA systems in six states. Your earlier response shaped their calculus. They\'re testing whether the first answer was a bluff.',
+    advisorVoice:'nsc_advisor', advisorLine:'They came back. What do you want to do now?' },
+  'c5': { minDaysLater:4, chancePerDay:0.12,
+    headline:'Recovery or Recession? Markets React to Your Policy',
+    brief:'Three months after the initial economic shock, markets are reacting to your earlier decisions. Analysts are connecting your choices to where the Dow stands today.',
+    advisorVoice:'econ_advisor', advisorLine:'The numbers are moving in response to what we did. Do we stay the course or correct?' },
+  'l1': { minDaysLater:6, chancePerDay:0.20,
+    headline:'Defectors Return — Flagship Bill Gets a Second Chance',
+    brief:'Two of the three senators who blocked your signature bill have privately signalled they may be open to a modified version. The window could be days.',
+    advisorVoice:'vp', advisorLine:'They\'re back at the table. What do we offer this time?' },
+  'c3': { minDaysLater:8, chancePerDay:0.08,
+    headline:'Alliance Tests Your Earlier Call',
+    brief:'The NATO partners involved in your earlier decision are now asking for a follow-up call. Your original stance is being tested as the situation on the ground has evolved.',
+    advisorVoice:'nsc_advisor', advisorLine:'They want to know if the first call still holds. Does it?' },
+};
+
+function _markEventCompleted(eventId){
+  if(!eventId) return;
+  if(!P100._completedEventIds) P100._completedEventIds=[];
+  if(!P100._completedEventIds.includes(eventId)) P100._completedEventIds.push(eventId);
+}
+
+function _checkFollowUpEvent(){
+  if(!P100._completedEventIds) return null;
+  for(const [trigId, followup] of Object.entries(EVENT_FOLLOWUPS)){
+    if(!P100._completedEventIds.includes(trigId)) continue;
+    const followupId='followup_'+trigId;
+    if(P100._completedEventIds.includes(followupId)) continue;
+    if((P100.day - (P100._followupTriggerDay?.[trigId]||1)) < followup.minDaysLater) continue;
+    if(Math.random() > followup.chancePerDay) continue;
+    _markEventCompleted(followupId);
+    return { id:followupId, headline:followup.headline, brief:followup.brief,
+             advisorVoice:followup.advisorVoice, advisorLine:followup.advisorLine, _isContinuation:true };
+  }
+  return null;
+}
+
+// ── X FEED ───────────────────────────────────────────────────────────────────
+const XFEED_HANDLES = [
+  { handle:'@SenMaloneOff',      name:'Sen. Malone',           icon:'🔴', type:'politician', party:'opp'    },
+  { handle:'@JuliaChenDC',       name:'Rep. Julia Chen',        icon:'🔵', type:'politician', party:'ally'   },
+  { handle:'@GovHartleyPA',      name:'Gov. Hartley',           icon:'🏛', type:'politician', party:'neutral'},
+  { handle:'@DanaSatoWH',        name:'Dana Sato',              icon:'📺', type:'press'                     },
+  { handle:'@PoliticoBreaking',  name:'POLITICO',               icon:'📰', type:'press'                     },
+  { handle:'@WashPostPolitics',  name:'Washington Post',        icon:'🗞', type:'press'                     },
+  { handle:'@ConservativeDaily', name:'The Conservative Daily', icon:'🦅', type:'commentator', lean:'right'  },
+  { handle:'@ProgressNow',       name:'Progress Now',           icon:'✊', type:'commentator', lean:'left'   },
+  { handle:'@IndyVoterPoll',     name:'Independent Voter',      icon:'🗳', type:'commentator', lean:'center' },
+  { handle:'@JustATexan1776',    name:'Randy B.',               icon:'🤠', type:'public'                    },
+  { handle:'@MargaretFromOhio',  name:'Margaret K.',            icon:'👩', type:'public'                    },
+  { handle:'@BrooklynPolitics',  name:'Carlos M.',              icon:'✌', type:'public'                    },
+  { handle:'@NotMyPresident2024',name:'Dave from Accounting',   icon:'😤', type:'hater',   recurring:true   },
+  { handle:'@JennyFromMapleton', name:'Jenny H.',               icon:'😍', type:'crush',   recurring:true   },
+];
+
+function _initXFeed(){
+  if(!P100._xFeed) P100._xFeed={ posts:[], generating:false };
+}
+
+function _fmtNum(n){ return n>=1000?`${(n/1000).toFixed(1)}K`:String(n); }
+
+function _addXPost(acct, text){
+  _initXFeed();
+  const mins=[1,2,3,5,7,12,18,24,31,45][Math.floor(Math.random()*10)];
+  P100._xFeed.posts.unshift({
+    handle:acct.handle, name:acct.name, icon:acct.icon,
+    text, time:mins<60?`${mins}m ago`:`${Math.round(mins/60)}h ago`,
+    day:P100.day, likes:Math.floor(Math.random()*4200)+50,
+    retweets:Math.floor(Math.random()*900)+5,
+  });
+  if(P100._xFeed.posts.length>5) P100._xFeed.posts.length=5;
+}
+
+function _renderXFeedPanel(){
+  const panel=document.getElementById('p100-xfeed-panel');
+  if(!panel) return;
+  _initXFeed();
+  const posts=P100._xFeed.posts.slice(0,5);
+  if(!posts.length){
+    panel.innerHTML='<div class="p100-xfeed-empty">Feed updates after each decision</div>';
+    return;
+  }
+  panel.innerHTML=posts.map(p=>`
+    <div class="p100-xfeed-post">
+      <div class="p100-xfeed-post-header">
+        <span class="p100-xfeed-post-icon">${p.icon}</span>
+        <div class="p100-xfeed-post-meta">
+          <div class="p100-xfeed-post-name">${p.name}</div>
+          <div class="p100-xfeed-post-handle">${p.handle} · ${p.time}</div>
+        </div>
+        <span class="p100-xfeed-post-day">Day ${p.day}</span>
+      </div>
+      <div class="p100-xfeed-post-text">${p.text}</div>
+      <div class="p100-xfeed-post-stats">
+        <span>♥ ${_fmtNum(p.likes)}</span>
+        <span>⟳ ${_fmtNum(p.retweets)}</span>
+      </div>
+    </div>`).join('');
+}
+
+// Fallback post pools — varied per account type to avoid repeats
+const _XFEED_FALLBACKS={
+  hater:[
+    `This is literally the worst thing any president has ever done. Yes I'm including ALL of them.`,
+    `My blood pressure can't take this anymore. Unbelievable.`,
+    `Called it. CALLED IT. Nobody listened and here we are.`,
+    `I don't care what party you are — this is a disaster. Goodnight.`,
+    `Every single day. Every single day something new. I can't.`,
+    `I've been saying this for MONTHS and you all thought I was crazy.`,
+    `Sir this is a Wendy's. (That's how presidential this decision is.)`,
+    `Welp. There goes my weekend.`,
+    `Wake me up when this is over. Actually don't. I need sleep more than I need news.`,
+    `I have a stress ball shaped like the Capitol and it's been destroyed.`,
+  ],
+  crush:[
+    `Not me refreshing the news just to see what they're up to today 😳`,
+    `I sat next to them in 4th grade homeroom and I KNEW they were going places. (Hi if you see this 👋)`,
+    `My mom STILL brings up that I used to have a crush on the president. Every. Thanksgiving.`,
+    `Okay but can we talk about the podium walk?? The CONFIDENCE. I'm not okay.`,
+    `I wrote their name on my folder in 4th grade. This is basically my fault.`,
+    `Some people have fan accounts for singers. I have one for a sitting president and I will not be taking questions.`,
+    `Childhood crush becomes Leader of the Free World. Normal day on this app.`,
+    `My therapist says I need to "move on." My therapist doesn't understand.`,
+    `The handshake at the summit. The EYE CONTACT. Someone check on me.`,
+    `Fourth grade me knew. Fourth grade me ALWAYS knew.`,
+  ],
+  commentator_right:[`This is government overreach, plain and simple.`,`The silent majority sees exactly what's happening here.`,`Accountability starts NOW.`,`Freedom isn't free and neither is bad policy.`,`Main Street is watching while Washington plays games.`,`Our founders are rolling in their graves.`,],
+  commentator_left:[`This is a gut punch to working families.`,`We didn't fight this hard to watch it happen again.`,`History will judge this moment.`,`The resistance is not tired.`,`Progress doesn't happen by accident — or by THIS.`,`People over profits. Always.`,],
+  commentator_center:[`Both sides need to take a breath and look at the data.`,`Reasonable people can disagree. This is one of those times.`,`The polling on this will be interesting.`,`Independence means calling it when it matters. This matters.`,`Not everything is partisan — some things are just policy.`,],
+  press:[`DEVELOPING: White House responds.`,`Sources on both sides of the aisle reacting tonight.`,`Press briefing expected within the hour.`,`The President's actions drawing scrutiny from multiple fronts.`,`Inside the room: what advisors are saying privately.`,`We've confirmed details independently. Developing.`,],
+  politician_opp:[`This will not stand.`,`My constituents deserve better and they know it.`,`The administration has crossed a line today.`,`I'll be calling for answers first thing tomorrow.`,`We are watching. Closely.`,],
+  politician_ally:[`Standing with this administration. The right call.`,`Leadership looks like this.`,`Proud to be part of a team making real decisions.`,`History will remember who showed up.`,`We move forward — together.`,],
+  politician_neutral:[`The governors are watching the downstream effects carefully.`,`Bipartisan concern is worth taking seriously.`,`I've called the White House. We'll see.`,`My state needs answers before I can weigh in.`,`Cautious optimism is still optimism.`,],
+  public:[
+    [`Just woke up to this news. A lot to process over my coffee.`,`Government gonna government I guess.`,`My neighbor is going to have OPINIONS about this at the HOA meeting.`,`The group chat is on fire rn.`,`Fascinating times to be alive. Terrifying, but fascinating.`],
+    [`Look I'm just a regular person but even I can see this matters.`,`Called my dad about this. He said "sounds about right." Helpful, dad.`,`Did anyone else just get a news alert or is it just me.`,`My dog doesn't care about any of this and I respect him for it.`,`I've refreshed the news 11 times in the last hour.`],
+    [`Finally something to argue about at dinner that isn't sports.`,`This timeline never gets boring I'll give it that.`,`Alright which one of you predicted THIS in your 2025 bingo card.`,`Whatever happens I want it on record that I was paying attention.`,`Called my senator. Left a voicemail. Felt good.`],
+  ],
+};
+
+// Track recently used handles to prevent back-to-back duplicates
+if(!window._xFeedLastHandles) window._xFeedLastHandles=[];
+
+function _getXFallback(acct){
+  const p=acct.type==='hater'?_XFEED_FALLBACKS.hater
+    :acct.type==='crush'?_XFEED_FALLBACKS.crush
+    :acct.type==='commentator'?(_XFEED_FALLBACKS['commentator_'+(acct.lean||'center')]||_XFEED_FALLBACKS.commentator_center)
+    :acct.type==='press'?_XFEED_FALLBACKS.press
+    :acct.type==='politician'?(_XFEED_FALLBACKS['politician_'+(acct.party||'neutral')]||_XFEED_FALLBACKS.politician_neutral)
+    :_XFEED_FALLBACKS.public[Math.floor(Math.random()*_XFEED_FALLBACKS.public.length)];
+  return Array.isArray(p)?p[Math.floor(Math.random()*p.length)]:'';
+}
+
+// Occasionally add a creative flavour instruction to spice up tweets
+const _TWEET_FLAVOURS=[
+  null,null,null, // most tweets are plain — weight towards normal
+  'Slip in a paraphrased movie quote that fits the moment.',
+  'Write it like a sports commentator calling a big play.',
+  'Reference a random historical president as comparison.',
+  'Write it like someone who just woke up from a 10-year coma.',
+  'Use a cooking metaphor.',
+  'Sound like a nature documentary narrator.',
+  null,null,
+];
+function _randFlavour(){ return _TWEET_FLAVOURS[Math.floor(Math.random()*_TWEET_FLAVOURS.length)]; }
+
+// STRICT OUTPUT RULE appended to every prompt — stops phi-3 from leaking reasoning
+const _TWEET_RULE=` OUTPUT RULE: Your entire response must be ONLY the tweet text. No (Note: ...), no explanations, no character counts, no parentheses commentary, no quotation marks around the tweet. Just the tweet.`;
+
+function _buildXPrompt(acct,actionContext,presName,presParty){
+  const flavour=_randFlavour();
+  const flavourNote=flavour?` ${flavour}`:'';
+  if(acct.type==='hater')
+    return `You are Dave from Accounting (@NotMyPresident2024) — a chronically online guy who hates EVERYTHING the president does no matter what. React to: "${actionContext}". Write ONE tweet under 115 chars. Be dramatic, funny, specific. No hashtags.${flavourNote}${_TWEET_RULE}`;
+  if(acct.type==='crush')
+    return `You are Jenny H. (@JennyFromMapleton) — a woman who had a massive crush on ${presName} in 4th grade and never got over it. You post embarrassing earnest fan content about them. React to: "${actionContext}". Write ONE tweet under 115 chars. Be funny and self-aware.${flavourNote}${_TWEET_RULE}`;
+  return `You are ${acct.name} (${acct.handle}) posting on X about: "${actionContext}". Account type: ${acct.type}, lean: ${acct.lean||acct.party||'neutral'}. President: ${presName} (${presParty}). Write ONE tweet under 125 chars, in character.${flavourNote}${_TWEET_RULE}`;
+}
+
+async function _generateXFeedPosts(actionContext){
+  _initXFeed();
+  if(P100._xFeed.generating) return;
+  P100._xFeed.generating=true;
+  const presName=P100.playerName||'the President';
+  const presParty=P100.playerPartyLabel||'';
+
+  // Scale post count to event importance: milestones get 4, normal events 2-3, minor 1-2
+  const isMilestone=!!P100._isMilestone;
+  const postCount=isMilestone?4:(Math.random()<0.5?3:2);
+  const recurringCount=isMilestone?2:(Math.random()<0.4?1:0); // hater+crush always on milestones, sometimes on normal events
+  const recurring=XFEED_HANDLES.filter(a=>a.recurring).slice(0,recurringCount);
+  const regularNeeded=postCount-recurringCount;
+  const eligible=XFEED_HANDLES.filter(a=>!a.recurring&&!window._xFeedLastHandles.includes(a.handle));
+  const pool=eligible.length>=regularNeeded?eligible:XFEED_HANDLES.filter(a=>!a.recurring);
+  const regularPicks=[...pool].sort(()=>Math.random()-.5).slice(0,regularNeeded);
+  window._xFeedLastHandles=regularPicks.map(a=>a.handle);
+  const picks=[...recurring,...regularPicks];
+
+  if(window.isElectron&&window.localAI){
+    for(const acct of picks){
+      try{
+        const prompt=_buildXPrompt(acct,actionContext,presName,presParty);
+        const fn=window.localAI.getTweet||window.localAI.getAdvice;
+        const raw=await fn.call(window.localAI,prompt);
+        if(raw&&raw.trim().length>10){
+          // Strip any leaked reasoning the model may have appended
+          const cleaned=raw.trim()
+            .replace(/\s*\(Note:[^)]*\)/gi,'')
+            .replace(/\s*\(This tweet[^)]*\)/gi,'')
+            .replace(/\s*\(The tweet[^)]*\)/gi,'')
+            .replace(/\s*\(\d+ chars?\)/gi,'')
+            .replace(/\s*\(under \d+[^)]*\)/gi,'')
+            .replace(/^["']|["']$/g,'')
+            .trim();
+          const firstLine=cleaned.split('\n')[0].trim();
+          const final=firstLine.length>10?firstLine:cleaned;
+          if(final.length>10) _addXPost(acct,_fixAISpacing(final));
+        }
+      }catch(_){}
+    }
+  } else {
+    picks.forEach(acct=>{ const t=_getXFallback(acct); if(t) _addXPost(acct,t); });
+  }
+  P100._xFeed.generating=false;
+  _renderXFeedPanel();
+}
+
+function _seedInitialXFeed(){
+  _initXFeed();
+  [
+    ['@DanaSatoWH',       `${P100.playerName} takes office. A new chapter begins. The press pool is ready.`],
+    ['@PoliticoBreaking', `BREAKING: ${P100.playerPartyLabel} administration officially begins. Watch this space.`],
+    ['@JustATexan1776',   `New president. Same swamp. Prove me wrong.`],
+    ['@MargaretFromOhio', `Watched the inauguration with the kids. Whatever your politics, today matters.`],
+    ['@IndyVoterPoll',    `First 100 days clock starts now. No excuses — just results.`],
+  ].forEach(([handle,text])=>{
+    const acct=XFEED_HANDLES.find(a=>a.handle===handle);
+    if(acct) _addXPost(acct,text);
+  });
+  _renderXFeedPanel();
+}
+
+function _injectXFeedColumn(){
+  if(document.getElementById('p100-xfeed-col')) return;
+  const body=document.querySelector('.p100-body');
+  if(!body) return;
+  body.classList.add('has-xfeed');
+  const sidebar=body.querySelector('.p100-sidebar');
+  const col=document.createElement('div');
+  col.id='p100-xfeed-col';
+  col.innerHTML=`
+    <div class="p100-xfeed-header">
+      <div style="font-size:15px;font-weight:900;color:#e8ecf4;font-family:sans-serif;line-height:1">𝕏</div>
+      <div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:#c8a84b;letter-spacing:.15em;font-weight:700">PUBLIC REACTION</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:8px;color:#2a3348">Live Feed</div>
+      </div>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:4px">
+        <div class="p100-xfeed-live-dot"></div>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:8px;color:#22c55e">LIVE</span>
+      </div>
+    </div>
+    <div id="p100-xfeed-panel"><div class="p100-xfeed-empty">Feed updates after each decision</div></div>`;
+  // Insert BEFORE the event area so grid order is: [xfeed] [main] [sidebar]
+  const eventArea=body.querySelector('#p100-event-area');
+  if(eventArea) body.insertBefore(col,eventArea);
+  else if(sidebar) body.insertBefore(col,sidebar);
+  else body.appendChild(col);
+}
+
+// ── WIRE EVERYTHING IN via initFirst100Days ───────────────────────────────────
+// We wrap the real initFirst100Days so our setup runs right after P100 state exists.
+(function(){
+  const _realInit = window.initFirst100Days || initFirst100Days;
+
+  window.initFirst100Days = function(...args){
+    _realInit.apply(this, args);
+    // P100 state now exists — initialise our systems
+    _initRecurringChars();
+    _initXFeed();
+    // Inject column and seed feed after the DOM settles
+    setTimeout(()=>{
+      _injectXFeedColumn();
+      _seedInitialXFeed();
+    }, 100);
+  };
+
+  // Patch _applyEvaluationResult via window so the reference is live
+  window._p100_origApplyEval = _applyEvaluationResult;
+  window._applyEvaluationResult = function(result, originalResponse){
+    window._p100_origApplyEval(result, originalResponse);
+    if(!P100) return;
+    const sit=P100._currentSituation;
+    // Mark event completed for memory (feed already generated during spinner)
+    if(sit?.id) _markEventCompleted(sit.id);
+  };
+
+  // Patch p100SubmitFreeAction for tweet generation on free actions
+  const _realFreeAction = window.p100SubmitFreeAction;
+  window.p100SubmitFreeAction = async function(){
+    const inputEl=document.getElementById('p100-free-action-input');
+    const text=inputEl?inputEl.value.trim():'';
+    if(_realFreeAction) await _realFreeAction.apply(this, arguments);
+    if(text&&P100) setTimeout(()=>_generateXFeedPosts(`President ${P100.playerName} took off-brief action: "${text.slice(0,120)}"`),500);
+  };
+
+  // Patch _scheduleNextEvent to check follow-ups — done via window property
+  window._p100_scheduleNext_withFollowup = async function(){
+    if(!P100||P100.day>=100){_showEndScreen();return;}
+    const milestone=_checkMilestone();
+    if(milestone){
+      P100.milestoneDone[milestone]=true;
+      switch(milestone){
+        case'cabinet':return _renderCabinetMilestone();
+        case'agenda':return _renderAgendaMilestone();
+        case'legislation':return _renderLegislationMilestone();
+        case'congress_bill':return _renderCongressBillMilestone();
+        case'state_of_union':return _renderStateOfUnionMilestone();
+        case'crisis_peak':return _renderCrisisMilestone();
+        case'address':return _renderFinalAddressMilestone();
+      }
+    }
+    // Check for follow-up continuation
+    const followUp=_checkFollowUpEvent();
+    if(followUp){
+      // Track headline so next AI call knows to avoid this topic
+      // Continuations: record domain but don't block the domain for long (only 1 slot)
+      if(!P100._aiGeneratedHeadlines) P100._aiGeneratedHeadlines=[];
+      if(followUp.headline&&!P100._aiGeneratedHeadlines.includes(followUp.headline)){
+        P100._aiGeneratedHeadlines.push(followUp.headline);
+        if(P100._aiGeneratedHeadlines.length>20) P100._aiGeneratedHeadlines.shift();
+      }
+      _recordDomain(_inferDomain(followUp.headline));
+      P100._pendingAI=false; P100._isMilestone=null; P100._currentSituation=followUp;
+      _renderBriefing();
+      setTimeout(()=>{
+        const tag=document.querySelector('.p100-event-phase-tag');
+        if(tag) tag.textContent='🔁 CONTINUATION — '+tag.textContent;
+      },50);
+      return;
+    }
+    // Normal flow
+    P100._eventCount=(P100._eventCount||0)+1;
+    P100._pendingAI=true; _renderBriefingPlaceholder();
+    const phase=_currentPhase();
+    let situation=null;
+    if(P100._aiFailCount<6) situation=await _fetchAISituation(phase);
+    P100._pendingAI=false;
+    if(situation){ P100._aiFailCount=0; if(situation.id) _markEventCompleted(situation.id); }
+    else{
+      P100._aiFailCount=(P100._aiFailCount||0)+1;
+      situation=await _pickFallbackSituationWithMemory(phase.id);
+      // Track curated/procedural headline so AI avoids the same topic next turn
+      if(situation?.headline){
+        if(!P100._aiGeneratedHeadlines) P100._aiGeneratedHeadlines=[];
+        if(!P100._aiGeneratedHeadlines.includes(situation.headline)){
+          P100._aiGeneratedHeadlines.push(situation.headline);
+          if(P100._aiGeneratedHeadlines.length>20) P100._aiGeneratedHeadlines.shift();
+        }
+        _recordDomain(EVENT_DOMAINS[situation.id]||_inferDomain(situation.headline));
+      }
+    }
+    P100._isMilestone=null; P100._currentSituation=situation; _renderBriefing();
+  };
+
+  window._p100ScheduleNextEvent=window._p100_scheduleNext_withFollowup;
+
+})();
+
+// Fallback picker with memory (avoids repeats)
+async function _pickFallbackSituationWithMemory(phaseId){
+  const pool=SITUATION_POOL[phaseId]||SITUATION_POOL.first_acts;
+  if(!P100._completedEventIds) P100._completedEventIds=[];
+  const used=P100._usedByPhase[phaseId]||[];
+  const globalUsed=P100._completedEventIds;
+  let av=pool.filter(s=>!used.includes(s.id)&&!globalUsed.includes(s.id));
+  if(!av.length){
+    // All curated used — reset phase tracking and go procedural
+    P100._usedByPhase[phaseId]=[];
+    return await _buildProceduralSituation(phaseId);
+  }
+  if(Math.random()<0.25) return await _buildProceduralSituation(phaseId);
+  const pick=av[Math.floor(Math.random()*av.length)];
+  (P100._usedByPhase[phaseId]=P100._usedByPhase[phaseId]||[]).push(pick.id);
+  _markEventCompleted(pick.id);
+  return JSON.parse(JSON.stringify(pick));
+}
+

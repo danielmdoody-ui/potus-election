@@ -42,9 +42,17 @@
   <!-- STEP 1: Identity -->
   <div id="setup-step1" class="setup-step active-step">
     <div class="setup-header">
+      <div style="position:absolute;top:14px;right:14px;display:flex;gap:6px">
+        <button id="mute-btn-setup" onclick="toggleMute()" title="Mute/unmute music" style="background:transparent;border:1px solid var(--border2);color:var(--text2);width:32px;height:32px;border-radius:6px;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border2)'">🔊</button>
+        <button onclick="openSettingsModal()" title="Settings" style="background:transparent;border:1px solid var(--border2);color:var(--text2);width:32px;height:32px;border-radius:6px;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border2)'">⚙</button>
+      </div>
       <div class="eyebrow" id="setup-eyebrow">Presidential Election Simulator</div>
       <h1 id="potus-title" style="cursor:default;user-select:none" onclick="potusClick()" title=""><span id="potus-p" style="display:inline">P</span>OTUS</h1>
       <p>Win your party's primary, survive the convention, choose your running mate, and claim 270 electoral votes.</p>
+      <div style="margin-top: 15px; font-family: var(--font-mono); font-size: 11px; color: var(--text3); display: flex; gap: 15px; justify-content: center; align-items: center;">
+        <span style="background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 4px; border: 1px solid var(--border);">v1.0.1/span>
+        <span style="background: rgba(167,139,250,0.08); padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(167,139,250,0.3); color: #a78bfa;">👥 60,000+ players</span>
+      </div>
     </div>
     <div class="setup-form animate-in">
       <div class="form-row"><label class="form-label">Your Name</label><input type="text" class="form-input" id="player-name" value="Alex Morgan"></div>
@@ -831,6 +839,11 @@
     <!-- RIGHT -->
     <div class="right-panel">
       <div class="panel-section"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div class="panel-title" style="margin-bottom:0">Campaign Dispatch</div><div style="font-family:var(--font-mono);font-size:8px;color:var(--text3)">click headline to cycle framing</div></div><div class="news-feed" id="news-feed"></div></div>
+      <div class="panel-section" id="free-action-section">
+        <div class="panel-title" style="margin-bottom:8px">🗒 Free Action <span style="color:var(--text3);font-size:9px">(optional)</span></div>
+        <textarea id="free-action-input" placeholder="Describe a custom campaign action, statement, or decision this week…" style="width:100%;box-sizing:border-box;min-height:72px;resize:vertical;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:var(--font-body);font-size:12px;line-height:1.6;padding:9px 11px;outline:none;transition:border-color .2s" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"></textarea>
+        <div id="free-action-result" style="display:none;margin-top:8px;padding:9px 11px;background:var(--bg);border:1px solid var(--border2);border-radius:var(--radius);font-size:11px;color:var(--text2);line-height:1.6"></div>
+      </div>
       <div class="panel-section">
         <div class="panel-title">Demographics</div>
         <div class="stat-bars">
@@ -1048,7 +1061,35 @@
   <div class="bk-subtitle" id="bk-result-sub">2024 Presidential Election · Post-Mortem Analysis</div>
   <div class="bk-grid" id="bk-grid"></div>
   <div class="bk-cta">
+    <button id="bk-presidency-btn" class="bk-btn primary" onclick="showNewsInterstitial()" style="display:none;background:linear-gradient(135deg,#b8962e,#c8a84b);color:#060810;font-weight:900;letter-spacing:.05em;width:100%">🏛 BEGIN YOUR FIRST 100 DAYS &nbsp;→</button>
+    <div id="bk-presidency-sub" style="display:none;font-family:'IBM Plex Mono',monospace;font-size:9px;color:rgba(200,168,75,.6);text-align:center;letter-spacing:.08em;margin-top:4px">Type your responses as President — AI evaluates every decision</div>
     <button class="bk-btn primary" onclick="proceedToEndScreen()">View Final Results →</button>
+  </div>
+</div>
+
+<!-- ══ NEWS INTERSTITIAL ══ -->
+<div id="news-interstitial-screen" class="screen" style="background:#060810;align-items:center;justify-content:center;min-height:100vh;padding:0">
+  <div style="width:100%;max-width:680px;height:100vh;display:flex;flex-direction:column;overflow:hidden">
+    <!-- Masthead -->
+    <div style="flex-shrink:0;background:#0a0c10;border-bottom:2px solid #c8a84b;padding:14px 32px;display:flex;align-items:baseline;justify-content:space-between">
+      <div>
+        <div style="font-family:'Playfair Display',serif;font-size:clamp(22px,4vw,36px);font-weight:900;color:#e8ecf4;letter-spacing:-.01em">The American Herald</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:8px;color:#c8a84b;letter-spacing:.25em;margin-top:2px">ELECTION NIGHT EDITION · SPECIAL REPORT</div>
+      </div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:8px;color:#4a5568;text-align:right;line-height:1.6">FINAL EDITION<br>PRINT &amp; DIGITAL</div>
+    </div>
+    <!-- Article body -->
+    <div style="flex:1;overflow-y:auto;padding:32px 32px 0" id="news-interstitial-body">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:16px;height:16px;border:2px solid #c8a84b;border-top-color:transparent;border-radius:50%;animation:spin 1s linear infinite"></div>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#4a5568">Generating election night coverage…</span>
+      </div>
+    </div>
+    <!-- Footer CTA -->
+    <div style="flex-shrink:0;padding:20px 32px;border-top:1px solid #1e2535;background:#0a0c10;display:flex;align-items:center;justify-content:space-between;gap:16px">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:#4a5568;line-height:1.6">The nation is watching.<br>Your first 100 days begin now.</div>
+      <button onclick="initFirst100Days()" style="background:linear-gradient(135deg,#b8962e,#c8a84b);border:none;border-radius:6px;color:#060810;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:900;letter-spacing:.1em;padding:12px 24px;cursor:pointer;white-space:nowrap;flex-shrink:0">🏛 ENTER THE WHITE HOUSE →</button>
+    </div>
   </div>
 </div>
 
@@ -1073,6 +1114,13 @@
     <div class="en-clock-block">
       <div class="en-clock" id="p100-clock">00:00:00</div>
       <div class="en-date-label">WHITE HOUSE</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;padding:0 12px;border-left:1px solid #1e2535;flex-shrink:0">
+      <button id="mute-btn-p100" class="mute-btn" onclick="toggleMute()" title="Mute/unmute music" style="background:#0d1117;border:1px solid #2a3348;color:#8a93a8;width:30px;height:30px;border-radius:4px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center">🔊</button>
+      <button onclick="openSettingsModal()" title="Settings" style="background:#0d1117;border:1px solid #2a3348;color:#8a93a8;width:30px;height:30px;border-radius:4px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center">⚙</button>
+      <button onclick="openSaveLoadModal('save')" title="Save game" style="background:#0d1117;border:1px solid #2a3348;color:#c8a84b;width:30px;height:30px;border-radius:4px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center">💾</button>
+      <button onclick="p100ShowTutorial()" title="How to play" style="background:#0d1117;border:1px solid rgba(200,168,75,.35);color:#c8a84b;padding:0 10px;height:30px;border-radius:4px;cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.08em;white-space:nowrap">❓ HOW TO PLAY</button>
+      <button onclick="p100ConfirmExitToMenu()" title="Back to main menu" style="background:#0d1117;border:1px solid #2a3348;color:#8a93a8;padding:0 10px;height:30px;border-radius:4px;cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.08em;white-space:nowrap">⬅ MENU</button>
     </div>
   </div>
   <div class="p100-milestone-bar" id="p100-milestone-bar"></div>
@@ -1103,7 +1151,7 @@
     </div>
   </div>
   <div id="p100-news-ticker" style="display:none;position:relative;height:32px;background:#0a0c10;border-top:1px solid #1e2535;align-items:center;overflow:hidden;flex-shrink:0">
-    <div id="p100-ticker-label" style="flex-shrink:0;font-family:'IBM Plex Mono',monospace;font-size:10px;background:#c8a84b;color:#0a0c10;padding:0 12px;height:100%;display:flex;align-items:center;font-weight:700;letter-spacing:.1em">BRIEFING</div>
+    <div id="p100-ticker-label" style="flex-shrink:0;font-family:'IBM Plex Mono',monospace;font-size:10px;background:#c8a84b;color:#0a0c10;padding:0 12px;height:100%;display:flex;align-items:center;font-weight:700;letter-spacing:.1em;position:relative;z-index:2">BRIEFING</div>
     <div id="p100-ticker-inner" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#e8ecf4;padding:0 24px;white-space:nowrap;animation:ticker 40s linear infinite"></div>
   </div>
 </div>
@@ -1318,6 +1366,20 @@ setTimeout(function(){
       <button class="modal-close" onclick="closeModal('settings-modal')">×</button>
     </div>
     <div class="modal-body" style="display:flex;flex-direction:column;gap:20px">
+      <div>
+        <div style="font-family:var(--font-mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.15em;margin-bottom:12px">🖥 Display / Resolution</div>
+        <div id="resolution-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-bottom:6px">
+          <button class="ui-scale-btn" data-res="1280x720" onclick="setResolution(1280,720,this)">1280 × 720</button>
+          <button class="ui-scale-btn" data-res="1920x1080" onclick="setResolution(1920,1080,this)">1920 × 1080</button>
+          <button class="ui-scale-btn" data-res="2560x1440" onclick="setResolution(2560,1440,this)">2560 × 1440</button>
+          <button class="ui-scale-btn" data-res="3840x2160" onclick="setResolution(3840,2160,this)">3840 × 2160</button>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px">
+          <button class="ui-scale-btn" id="windowed-btn" onclick="setWindowed(this)">⊡ Windowed</button>
+          <button class="ui-scale-btn" id="fullscreen-btn" onclick="setFullscreen(this)">⛶ Full Screen</button>
+        </div>
+        <div style="font-size:11px;color:var(--text3);margin-top:8px;font-family:var(--font-mono)">Resolution sets the window size. Full Screen uses your display's native resolution.</div>
+      </div>
       <div>
         <div style="font-family:var(--font-mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.15em;margin-bottom:12px">🖥 UI Scale</div>
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px" id="ui-scale-grid">
@@ -1789,6 +1851,73 @@ setTimeout(function(){
     <div id="ach-modal-list" style="overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:8px"></div>
   </div>
 </div>
+
+<!-- ══ CUSTOM CURSOR ══ -->
+<div id="cursor-aura"></div>
+<div id="custom-cursor-ring"></div>
+<div id="custom-cursor"></div>
+
+<script>
+(function(){
+  const dot   = document.getElementById('custom-cursor');
+  const ring  = document.getElementById('custom-cursor-ring');
+  const aura  = document.getElementById('cursor-aura');
+
+  let mx = -200, my = -200;
+  let rx = -200, ry = -200;
+  let ax = -200, ay = -200;
+  let raf;
+
+  /* — smooth ring + aura via lerp — */
+  function lerp(a, b, t){ return a + (b - a) * t; }
+
+  function tick(){
+    rx = lerp(rx, mx, 0.14);
+    ry = lerp(ry, my, 0.14);
+    ax = lerp(ax, mx, 0.07);
+    ay = lerp(ay, my, 0.07);
+
+    ring.style.left = rx + 'px';
+    ring.style.top  = ry + 'px';
+    aura.style.left = ax + 'px';
+    aura.style.top  = ay + 'px';
+    raf = requestAnimationFrame(tick);
+  }
+  tick();
+
+  document.addEventListener('mousemove', function(e){
+    mx = e.clientX; my = e.clientY;
+    dot.style.left = mx + 'px';
+    dot.style.top  = my + 'px';
+
+    /* show aura only on setup screen */
+    const onHome = document.getElementById('setup-screen')?.classList.contains('active');
+    if(onHome){ aura.classList.add('aura-visible'); }
+    else       { aura.classList.remove('aura-visible'); }
+  });
+
+  document.addEventListener('mouseleave', function(){
+    aura.classList.remove('aura-visible');
+  });
+
+  /* — click burst — */
+  document.addEventListener('mousedown', function(){
+    dot.classList.add('cursor-click');
+  });
+  document.addEventListener('mouseup', function(){
+    dot.classList.remove('cursor-click');
+  });
+
+  /* — ring expand on hoverable elements — */
+  const hoverSel = 'button, a, [role="button"], input, select, textarea, label[for], .party-btn, .action-btn, .state-path, .vp-option, .diff-btn';
+  document.addEventListener('mouseover', function(e){
+    if(e.target.closest(hoverSel)) ring.classList.add('cursor-hover');
+  });
+  document.addEventListener('mouseout', function(e){
+    if(e.target.closest(hoverSel)) ring.classList.remove('cursor-hover');
+  });
+})();
+</script>
 
 </body>
 </html>
